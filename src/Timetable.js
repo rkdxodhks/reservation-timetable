@@ -189,7 +189,7 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
   return (
     <div>
       <h2 className="text-center my-4">{selectedLab} 예약 현황</h2>
-      <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-7 g-3">
+      <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-2 g-3">
         {timeSlots.map((timeSlot) => {
           const reservationsForSlot = reservations.filter((r) => r.time_slot === timeSlot);
           
@@ -202,6 +202,7 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
               >
                 <div className="card-body d-flex flex-column justify-content-center">
                   <h5 className="card-title mb-1">{timeSlot}</h5>
+                  <p className="card-text small text-truncate">{reservationsForSlot.map(r => r.student_id).join(', ') || '예약 가능'}</p>
                   <p className="card-text small">({reservationsForSlot.length}/{MAX_RESERVATIONS_PER_SLOT})</p>
                 </div>
               </div>

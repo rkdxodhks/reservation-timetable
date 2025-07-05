@@ -50,7 +50,7 @@ function App() {
         </nav>
 
         {/* Main Content */}
-        <main className="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+        <main className="col-md-9 col-lg-10 px-md-4">
           <div className="card p-3 mb-4 shadow-sm">
             <div className="row g-3 align-items-end">
               <div className="col-md-3">
