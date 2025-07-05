@@ -92,29 +92,54 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
   };
 
   const handleCancelReservation = async () => {
+    const MASTER_AUTH_NUMBER = '202345603'; // 마스터 인증 번호 (보안상 환경변수로 관리하는 것이 좋음)
+
     if (!studentId || !authNumber) {
         alert('학번과 인증번호를 모두 입력해주세요.');
         return;
     }
 
-    // 먼저 내가 한 예약이 맞는지 확인 (인증번호 포함)
-    const { data: myReservation, error: fetchError } = await supabase
-        .from('reservations')
-        .select('id')
-        .eq('time_slot', selectedTimeSlot)
-        .eq('student_id', studentId)
-        .eq('date', selectedDate)
-        .eq('lab_id', selectedLab)
-        .eq('auth_number', authNumber)
-        .single();
+    let reservationToDelete = null;
 
-    if (fetchError || !myReservation) {
-        alert('인증번호가 일치하지 않거나 예약 정보를 찾을 수 없습니다.');
-        return;
+    // 1. 마스터 인증 번호로 취소 시도
+    if (authNumber === MASTER_AUTH_NUMBER) {
+        // 마스터 인증 번호가 일치하면, 해당 시간대의 모든 예약 중 하나를 찾아서 삭제 (관리자 권한)
+        // 여기서는 studentId와 상관없이 해당 time_slot, date, lab_id에 해당하는 첫 번째 예약을 찾습니다.
+        const { data, error } = await supabase
+            .from('reservations')
+            .select('id')
+            .eq('time_slot', selectedTimeSlot)
+            .eq('date', selectedDate)
+            .eq('lab_id', selectedLab)
+            .limit(1)
+            .single();
+        
+        if (error || !data) {
+            alert('마스터 인증번호로 취소할 예약 정보를 찾을 수 없습니다.');
+            return;
+        }
+        reservationToDelete = data;
+    } else {
+        // 2. 일반 사용자 인증 번호로 취소 시도
+        const { data, error } = await supabase
+            .from('reservations')
+            .select('id')
+            .eq('time_slot', selectedTimeSlot)
+            .eq('student_id', studentId)
+            .eq('date', selectedDate)
+            .eq('lab_id', selectedLab)
+            .eq('auth_number', authNumber)
+            .single();
+
+        if (error || !data) {
+            alert('인증번호가 일치하지 않거나 예약 정보를 찾을 수 없습니다.');
+            return;
+        }
+        reservationToDelete = data;
     }
 
-    // 인증번호가 일치하면 삭제 진행
-    const { error: deleteError } = await supabase.from('reservations').delete().match({ id: myReservation.id });
+    // 예약 삭제 진행
+    const { error: deleteError } = await supabase.from('reservations').delete().match({ id: reservationToDelete.id });
     
     if (deleteError) {
       console.error('Error canceling reservation:', deleteError);
