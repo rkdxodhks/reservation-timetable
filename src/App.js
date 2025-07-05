@@ -95,18 +95,18 @@ function App() {
             </div>
           </div>
 
+          <div className="card p-3 mb-4 shadow-sm">
+            <p className="mb-1"><strong>시스템 사용법</strong></p>
+            <p className="mb-0">학번과 인증번호를 입력하고, 원하는 실험실과 날짜를 선택한 후 예약을 진행하세요.</p>
+            <p className="mb-0">본인 예약은 초록색, 타인 예약은 노란색, 예약 마감은 빨간색으로 표시됩니다.</p>
+          </div>
+
           <Timetable 
             studentId={studentId} 
             authNumber={authNumber}
             selectedLab={selectedLab}
             selectedDate={selectedDate}
           />
-
-          <footer className="mt-5 p-3 bg-light text-center rounded">
-            <p className="mb-1"><strong>시스템 사용법</strong></p>
-            <p className="mb-0">학번과 인증번호를 입력하고, 원하는 실험실과 날짜를 선택한 후 예약을 진행하세요.</p>
-            <p className="mb-0">본인 예약은 초록색, 타인 예약은 노란색, 예약 마감은 빨간색으로 표시됩니다.</p>
-          </footer>
         </main>
       </div>
     </div>
