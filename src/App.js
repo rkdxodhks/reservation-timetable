@@ -35,16 +35,14 @@ function App() {
             <ul className="nav flex-column">
               {LABS.map(lab => (
                 <li key={lab} className="nav-item">
-                  <a 
+                  <button 
                     className={`nav-link ${selectedLab === lab ? 'active' : ''}`}
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
+                    onClick={() => {
                       setSelectedLab(lab);
                     }}
                   >
                     {lab}
-                  </a>
+                  </button>
                 </li>
               ))}
             </ul>
