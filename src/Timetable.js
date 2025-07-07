@@ -1,68 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
-import { generateTimeSlots } from './constants';
+import { generateTimeSlots, MAX_RESERVATIONS_PER_SLOT } from './constants';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal, Button } from 'react-bootstrap';
 
-const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
-  const [reservations, setReservations] = useState([]);
+const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservations, onReservationUpdate }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
-  const channelRef = useRef(null); // Ref to hold the channel instance
 
   const timeSlots = generateTimeSlots();
-  const MAX_RESERVATIONS_PER_SLOT = 2;
-
-  const fetchReservations = useCallback(async () => {
-    if (!selectedDate || !selectedLab) return;
-
-    const { data, error } = await supabase
-      .from('reservations')
-      .select('*')
-      .eq('date', selectedDate)
-      .eq('lab_id', selectedLab);
-
-    if (error) {
-      console.error('Error fetching reservations:', error);
-    } else {
-      setReservations(data);
-    }
-  }, [selectedDate, selectedLab]);
-
-  useEffect(() => {
-    fetchReservations();
-
-    // Unsubscribe from the previous channel if it exists
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-    }
-
-    const channel = supabase
-      .channel(`reservations:${selectedDate}:${selectedLab}`)
-      .on(
-        'postgres_changes',
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'reservations', 
-          filter: `date=eq.${selectedDate}`
-        },
-        (payload) => {
-          // Refetch reservations when a change is detected
-          fetchReservations();
-        }
-      )
-      .subscribe();
-
-    channelRef.current = channel; // Store the new channel instance
-
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-    };
-  }, [fetchReservations, selectedDate, selectedLab]);
 
   const handleCardClick = (timeSlot) => {
     setSelectedTimeSlot(timeSlot);
@@ -80,40 +26,35 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
       return;
     }
 
-    const newReservation = {
-      time_slot: selectedTimeSlot,
-      student_id: studentId,
-      auth_number: authNumber,
-      date: selectedDate,
-      lab_id: selectedLab,
-    };
-
-    // Optimistic UI update
-    setReservations(prev => [...prev, newReservation]);
-    handleCloseModal();
-
-    const { error } = await supabase.from('reservations').insert([newReservation]);
+    const { error } = await supabase.from('reservations').insert([
+      { 
+        time_slot: selectedTimeSlot, 
+        student_id: studentId,
+        auth_number: authNumber,
+        date: selectedDate,
+        lab_id: selectedLab
+      }
+    ]);
 
     if (error) {
       console.error('Error creating reservation:', error);
-      // Revert UI on error
-      setReservations(prev => prev.filter(r => r.student_id !== studentId || r.time_slot !== selectedTimeSlot));
       if (error.code === '23505') {
-        alert('이미 이 시간대에 예약하셨습니다.');
+          alert('이미 이 시간대에 예약하셨습니다.');
       } else {
-        alert('예약에 실패했습니다. 오류가 발생했습니다.');
+          alert('예약에 실패했습니다. 오류가 발생했습니다.');
       }
     } else {
-      // No alert on success, UI is already updated
+      onReservationUpdate(); // Notify App.js to refetch all data
     }
+    handleCloseModal();
   };
 
   const handleCancelReservation = async () => {
     const MASTER_AUTH_NUMBER = '202345603';
 
     if (!studentId || !authNumber) {
-      alert('학번과 인증번호를 모두 입력해주세요.');
-      return;
+        alert('학번과 인증번호를 모두 입력해주세요.');
+        return;
     }
 
     let reservationToCancel = reservations.find(r => 
@@ -122,24 +63,30 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
     );
 
     if (!reservationToCancel) {
-        alert('취소할 예약 정보를 찾을 수 없습니다.');
-        return;
+        const { data, error } = await supabase
+            .from('reservations')
+            .select('id')
+            .eq('time_slot', selectedTimeSlot)
+            .eq('date', selectedDate)
+            .eq('lab_id', selectedLab)
+            .limit(1)
+            .single();
+        if (error || !data) {
+            alert('취소할 예약 정보를 찾을 수 없습니다.');
+            return;
+        }
+        reservationToCancel = { id: data.id }; // We only need the id for deletion
     }
 
-    // Optimistic UI update
-    setReservations(prev => prev.filter(r => r.id !== reservationToCancel.id));
-    handleCloseModal();
-
-    const { error } = await supabase.from('reservations').delete().match({ id: reservationToCancel.id });
-
-    if (error) {
-      console.error('Error canceling reservation:', error);
-      // Revert UI on error
-      setReservations(prev => [...prev, reservationToCancel]);
+    const { error: deleteError } = await supabase.from('reservations').delete().match({ id: reservationToCancel.id });
+    
+    if (deleteError) {
+      console.error('Error canceling reservation:', deleteError);
       alert('예약 취소에 실패했습니다.');
     } else {
-      // No alert on success, UI is already updated
+      onReservationUpdate(); // Notify App.js to refetch all data
     }
+    handleCloseModal();
   };
 
   const renderModalContent = () => {
@@ -197,10 +144,10 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate }) => {
 
   const getCardClass = (reservationsForSlot) => {
     const isMyReservation = reservationsForSlot.some(r => r.student_id === studentId);
-    if (isMyReservation) return 'bg-success text-white'; // My reservation
-    if (reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT) return 'bg-danger text-white'; // Full
-    if (reservationsForSlot.length > 0) return 'bg-warning'; // Partially reserved
-    return 'bg-light'; // Available
+    if (isMyReservation) return 'bg-success text-white';
+    if (reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT) return 'bg-danger text-white';
+    if (reservationsForSlot.length > 0) return 'bg-warning';
+    return 'bg-light';
   };
 
   return (

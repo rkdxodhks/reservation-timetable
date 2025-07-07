@@ -28,3 +28,5 @@ export const generateTimeSlots = () => {
   
   return slots;
 };
+
+export const MAX_RESERVATIONS_PER_SLOT = 2;

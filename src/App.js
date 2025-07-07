@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Timetable from './Timetable';
-import { LABS } from './constants';
+import { LABS, generateTimeSlots, MAX_RESERVATIONS_PER_SLOT } from './constants';
+import { supabase } from './supabaseClient';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
@@ -8,15 +9,62 @@ function App() {
   const [studentId, setStudentId] = useState('');
   const [authNumber, setAuthNumber] = useState('');
   const [selectedLab, setSelectedLab] = useState(LABS[0]);
-  
+  const [reservations, setReservations] = useState([]);
+  const channelRef = useRef(null);
+
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   
   const [selectedDate, setSelectedDate] = useState(today.toISOString().split('T')[0]);
 
+  const timeSlots = generateTimeSlots();
+  const totalSlots = timeSlots.length * MAX_RESERVATIONS_PER_SLOT;
+
+  const fetchAllReservations = useCallback(async () => {
+    if (!selectedDate) return;
+    const { data, error } = await supabase
+      .from('reservations')
+      .select('*')
+      .eq('date', selectedDate);
+
+    if (error) {
+      console.error('Error fetching reservations:', error);
+    } else {
+      setReservations(data);
+    }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    fetchAllReservations();
+
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
+
+    const channel = supabase
+      .channel(`reservations:${selectedDate}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'reservations', filter: `date=eq.${selectedDate}` }, 
+        () => fetchAllReservations()
+      )
+      .subscribe();
+
+    channelRef.current = channel;
+
+    return () => {
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+      }
+    };
+  }, [selectedDate, fetchAllReservations]);
+
   const handleDateChange = (date) => {
     setSelectedDate(date.toISOString().split('T')[0]);
+  };
+
+  const getRemainingSlots = (lab) => {
+    const labReservations = reservations.filter(r => r.lab_id === lab).length;
+    return totalSlots - labReservations;
   };
 
   return (
@@ -26,7 +74,6 @@ function App() {
       </header>
 
       <div className="row">
-        {/* Left Sidebar for Lab Selection */}
         <nav className="col-12 col-md-3 col-lg-2 bg-light sidebar">
           <div className="position-sticky pt-3">
             <img src="/bio-mat-logo.jpg" alt="Bio-Mat Logo" className="img-fluid mb-3" />
@@ -37,12 +84,11 @@ function App() {
               {LABS.map(lab => (
                 <li key={lab} className="nav-item">
                   <button 
-                    className={`nav-link ${selectedLab === lab ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedLab(lab);
-                    }}
+                    className={`nav-link d-flex justify-content-between align-items-center ${selectedLab === lab ? 'active' : ''}`}
+                    onClick={() => setSelectedLab(lab)}
                   >
                     {lab}
+                    <span className="badge bg-primary rounded-pill">{getRemainingSlots(lab)}</span>
                   </button>
                 </li>
               ))}
@@ -50,49 +96,48 @@ function App() {
           </div>
         </nav>
 
-        {/* Main Content */}
-        <main className="col-12 col-md-9 col-lg-10 px-md-4">
+        <main className="col-12 col-md-9 col-lg-10 px-md-5">
           <div className="card p-3 mb-4 shadow-sm">
             <div className="row g-3 align-items-end">
-              <div className="col-md-3">
-                <label htmlFor="studentId" className="form-label">학번</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="studentId"
-                  value={studentId}
-                  onChange={(e) => setStudentId(e.target.value)}
-                  placeholder="학번을 입력하세요"
-                />
-              </div>
-              <div className="col-md-3">
-                <label htmlFor="authNumber" className="form-label">인증번호</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  id="authNumber"
-                  value={authNumber}
-                  onChange={(e) => setAuthNumber(e.target.value)}
-                  placeholder="인증번호 4자리"
-                />
-              </div>
-              <div className="col-md-6">
-                <label className="form-label">날짜 선택</label>
-                <div className="d-grid gap-2 d-md-flex">
-                  <button 
-                    className={`btn ${selectedDate === today.toISOString().split('T')[0] ? 'btn-primary' : 'btn-outline-primary'}`} 
-                    onClick={() => handleDateChange(today)}
-                  >
-                    첫째날
-                  </button>
-                  <button 
-                    className={`btn ${selectedDate === tomorrow.toISOString().split('T')[0] ? 'btn-primary' : 'btn-outline-primary'}`} 
-                    onClick={() => handleDateChange(tomorrow)}
-                  >
-                    둘째날
-                  </button>
+                <div className="col-md-3">
+                    <label htmlFor="studentId" className="form-label">학번</label>
+                    <input
+                    type="text"
+                    className="form-control"
+                    id="studentId"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    placeholder="학번을 입력하세요"
+                    />
                 </div>
-              </div>
+                <div className="col-md-3">
+                    <label htmlFor="authNumber" className="form-label">인증번호</label>
+                    <input
+                    type="password"
+                    className="form-control"
+                    id="authNumber"
+                    value={authNumber}
+                    onChange={(e) => setAuthNumber(e.target.value)}
+                    placeholder="인증번호 4자리"
+                    />
+                </div>
+                <div className="col-md-6">
+                    <label className="form-label">날짜 선택</label>
+                    <div className="d-grid gap-2 d-md-flex">
+                    <button 
+                        className={`btn ${selectedDate === today.toISOString().split('T')[0] ? 'btn-primary' : 'btn-outline-primary'}`} 
+                        onClick={() => handleDateChange(today)}
+                    >
+                        첫째날
+                    </button>
+                    <button 
+                        className={`btn ${selectedDate === tomorrow.toISOString().split('T')[0] ? 'btn-primary' : 'btn-outline-primary'}`} 
+                        onClick={() => handleDateChange(tomorrow)}
+                    >
+                        둘째날
+                    </button>
+                    </div>
+                </div>
             </div>
           </div>
 
@@ -107,6 +152,8 @@ function App() {
             authNumber={authNumber}
             selectedLab={selectedLab}
             selectedDate={selectedDate}
+            reservations={reservations.filter(r => r.lab_id === selectedLab)}
+            onReservationUpdate={fetchAllReservations} // Pass the fetch function to Timetable
           />
         </main>
       </div>
