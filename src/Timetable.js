@@ -144,10 +144,10 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
 
   const getCardClass = (reservationsForSlot) => {
     const isMyReservation = reservationsForSlot.some(r => r.student_id === studentId);
-    if (isMyReservation) return 'bg-success text-white';
-    if (reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT) return 'bg-danger text-white';
-    if (reservationsForSlot.length > 0) return 'bg-warning';
-    return 'bg-light';
+    if (isMyReservation) return 'bg-success'; // My reservation
+    if (reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT) return 'bg-danger'; // Full
+    if (reservationsForSlot.length > 0) return 'bg-warning'; // Partially reserved
+    return 'bg-light'; // Available
   };
 
   return (

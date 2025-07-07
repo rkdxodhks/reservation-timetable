@@ -66,8 +66,8 @@ function App() {
 
   return (
     <div className="container mt-4">
-      <header className="text-center mb-4">
-        <img src="/bio-mat-logo.jpg" alt="Bio-Mat Logo" className="img-fluid mb-3" style={{ maxWidth: '150px' }} />
+      <header className="text-center mb-5">
+        <img src="/bio-mat-logo.jpg" alt="Bio-Mat Logo" className="img-fluid mb-3" style={{ maxWidth: '180px' }} />
         <h1>BAF 실험실 예약 시스템</h1>
       </header>
 
@@ -78,10 +78,10 @@ function App() {
           onLabSelect={setSelectedLab}
         />
 
-        <div className="card p-3 mb-4 shadow-sm">
-          <div className="row g-3 align-items-end">
+        <div className="card p-4 mb-5 shadow-sm">
+          <div className="row g-4 align-items-baseline">
               <div className="col-md-3">
-                  <label htmlFor="studentId" className="form-label">학번</label>
+                  <label htmlFor="studentId" className="form-label fw-bold">학번</label>
                   <input
                   type="text"
                   className="form-control"
@@ -92,7 +92,7 @@ function App() {
                   />
               </div>
               <div className="col-md-3">
-                  <label htmlFor="authNumber" className="form-label">인증번호</label>
+                  <label htmlFor="authNumber" className="form-label fw-bold">인증번호</label>
                   <input
                   type="password"
                   className="form-control"
@@ -103,7 +103,7 @@ function App() {
                   />
               </div>
               <div className="col-md-6">
-                  <label className="form-label">날짜 선택</label>
+                  <label className="form-label fw-bold">날짜 선택</label>
                   <div className="d-grid gap-2 d-md-flex">
                   <button 
                       className={`btn ${selectedDate === todayStr ? 'btn-primary' : 'btn-outline-primary'}`} 
@@ -120,6 +120,12 @@ function App() {
                   </div>
               </div>
           </div>
+        </div>
+
+        <div className="card p-3 mb-4 shadow-sm">
+            <p className="mb-1 fw-bold">시스템 사용법</p>
+            <p className="mb-0">학번과 인증번호를 입력하고, 원하는 실험실과 날짜를 선택한 후 예약을 진행하세요.</p>
+            <p className="mb-0">본인 예약은 <span className="text-success fw-bold">초록색</span>, 타인 예약은 <span className="text-warning fw-bold">노란색</span>, 예약 마감은 <span className="text-danger fw-bold">빨간색</span>으로 표시됩니다.</p>
         </div>
 
         <Timetable 

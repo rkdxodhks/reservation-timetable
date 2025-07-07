@@ -1,30 +1,68 @@
 /* App.css */
 
+/* Define custom properties for colors */
+:root {
+  --primary-accent-blue: #3A8DFF;
+  --text-dark: #333333;
+  --pastel-blue: #a7d9f7; /* Light blue for progress bar */
+  --pastel-gray: #c0c0c0; /* Light gray for progress bar */
+  --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for cards */
+}
+
+/* General Body Styles */
+body {
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Example font stack */
+  color: var(--text-dark);
+  font-size: 16px; /* Base font size */
+}
+
+/* Header */
+h1 {
+  color: var(--primary-accent-blue);
+  font-weight: 600; /* Bolder title */
+}
+
 /* Main content padding */
 main {
     padding-top: 1.5rem;
 }
 
+/* Card Styles (general) */
+.card {
+  box-shadow: var(--card-shadow); /* Apply shadow to all cards */
+  border: 1px solid rgba(0, 0, 0, 0.05); /* Subtle border */
+}
+
+/* Spacing between sections */
+/* This targets the input/date card and status panel card */
+.card.p-3.mb-4.shadow-sm { 
+  margin-bottom: 2.5rem !important; /* Increase vertical spacing */
+}
+
+/* Clickable Card (StatusPanel) */
 .clickable-card {
     cursor: pointer;
     transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
 .clickable-card:hover {
-    border-color: #007bff;
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    border-color: var(--primary-accent-blue);
+    box-shadow: 0 0 8px rgba(0, 123, 255, 0.7); /* Slightly stronger hover shadow */
 }
 
 .clickable-card.selected {
-    border-color: #007bff;
+    border-color: var(--primary-accent-blue);
     border-width: 2px;
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.7);
+    box-shadow: 0 0 10px rgba(0, 123, 255, 0.9); /* Stronger selected shadow */
 }
 
+/* Badge Container (Progress Bar) */
 .badge-container {
-  padding: .5em .6em; /* Adjust padding to match badge */
-  border-radius: .25rem; /* Match Bootstrap badge border-radius */
-  overflow: hidden; /* Hide overflow of progress bar */
+  padding: .5em .6em;
+  border-radius: .25rem;
+  overflow: hidden;
+  position: relative; /* Ensure positioning context for progress bar */
+  background-color: rgba(0, 0, 0, 0.05); /* Light background for the container */
 }
 
 .badge-container .progress-bar {
@@ -33,17 +71,82 @@ main {
   left: 0;
   height: 100%;
   transition: width .6s ease;
-  z-index: 0; /* Behind the text */
+  z-index: 0;
 }
 
 .badge-container span {
-  z-index: 1; /* Ensure text is above progress bar */
+  z-index: 1;
+  font-weight: 600; /* Make text bolder */
+  color: var(--text-dark); /* Ensure dark text color */
 }
 
+/* Pastel Colors for Progress Bars */
 .bg-pastel-blue {
-  background-color: #a7d9f7; /* Light blue */
+  background-color: var(--pastel-blue);
 }
 
 .bg-pastel-gray {
-  background-color: #c0c0c0; /* Light gray */
+  background-color: var(--pastel-gray);
+}
+
+/* Bootstrap Button Overrides for Hover */
+.btn {
+  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.btn-primary {
+  background-color: var(--primary-accent-blue);
+  border-color: var(--primary-accent-blue);
+}
+
+.btn-primary:hover {
+  background-color: #2a70d8; /* Slightly darker blue on hover */
+  border-color: #2a70d8;
+}
+
+.btn-outline-primary {
+  color: var(--primary-accent-blue);
+  border-color: var(--primary-accent-blue);
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--primary-accent-blue);
+  color: #fff;
+}
+
+/* Timetable Card Status Visualization */
+.card.bg-success { /* My reservation */
+  background-color: #e6ffe6 !important; /* Very light green */
+  border: 1px solid #4CAF50; /* Green border */
+  color: var(--text-dark) !important;
+}
+
+.card.bg-danger { /* Full */
+  background-color: #ffcdd2 !important; /* Pastel Red background */
+  border: 1px solid #ef9a9a; /* Slightly darker pastel red border */
+  color: var(--text-dark) !important; /* Dark text for better contrast */
+}
+
+.card.bg-warning { /* Partially reserved */
+  background-color: #fff8e1 !important; /* Very light yellow */
+  border: 1px solid #FFC107; /* Yellow border */
+  color: var(--text-dark) !important;
+}
+
+.card.bg-light { /* Available */
+  background-color: #ffffff !important; /* White background */
+  border: 1px solid var(--primary-accent-blue); /* Blue border */
+  color: var(--text-dark) !important;
+}
+
+/* Typography for time slot cards */
+.card-body h5.card-title { /* Time slot text */
+  font-size: 1.25rem; /* Larger font size */
+  font-weight: 600; /* Bolder */
+  color: var(--text-dark);
+}
+
+.card-body p.card-text { /* Student IDs and count */
+  font-size: 0.9rem;
+  color: #555; /* Slightly lighter than main text */
 }
