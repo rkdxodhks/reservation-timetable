@@ -153,7 +153,7 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
   return (
     <div>
       <h2 className="text-center my-4">{selectedLab} 예약 현황</h2>
-      <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-2 g-3">
+      <div className="row row-cols-1 row-cols-sm-1 row-cols-md-2 row-cols-lg-3 g-3">
         {timeSlots.map((timeSlot) => {
           const reservationsForSlot = reservations.filter((r) => r.time_slot === timeSlot);
           
