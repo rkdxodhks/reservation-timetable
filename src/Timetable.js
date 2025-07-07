@@ -3,6 +3,7 @@ import { supabase } from './supabaseClient';
 import { generateTimeSlots, MAX_RESERVATIONS_PER_SLOT } from './constants';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Modal, Button } from 'react-bootstrap';
+import { toast } from 'react-toastify';
 
 const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservations, onReservationUpdate }) => {
   const [showModal, setShowModal] = useState(false);
@@ -22,7 +23,7 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
 
   const handleConfirmReservation = async () => {
     if (!studentId || !authNumber) {
-      alert('학번과 인증번호를 모두 입력해주세요.');
+      toast.error('학번과 인증번호를 모두 입력해주세요.');
       return;
     }
 
@@ -39,9 +40,9 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
     if (error) {
       console.error('Error creating reservation:', error);
       if (error.code === '23505') {
-          alert('이미 이 시간대에 예약하셨습니다.');
+        toast.error('이미 이 시간대에 예약하셨습니다.');
       } else {
-          alert('예약에 실패했습니다. 오류가 발생했습니다.');
+        toast.error('예약에 실패했습니다. 오류가 발생했습니다.');
       }
     } else {
       onReservationUpdate(); // Notify App.js to refetch all data
@@ -50,10 +51,10 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
   };
 
   const handleCancelReservation = async () => {
-    const MASTER_AUTH_NUMBER = '202345603';
+    const MASTER_AUTH_NUMBER = process.env.REACT_APP_MASTER_AUTH_NUMBER;
 
     if (!studentId || !authNumber) {
-        alert('학번과 인증번호를 모두 입력해주세요.');
+        toast.error('학번과 인증번호를 모두 입력해주세요.');
         return;
     }
 
@@ -72,7 +73,7 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
             .limit(1)
             .single();
         if (error || !data) {
-            alert('취소할 예약 정보를 찾을 수 없습니다.');
+            toast.error('취소할 예약 정보를 찾을 수 없습니다.');
             return;
         }
         reservationToCancel = { id: data.id }; // We only need the id for deletion
@@ -82,8 +83,9 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
     
     if (deleteError) {
       console.error('Error canceling reservation:', deleteError);
-      alert('예약 취소에 실패했습니다.');
+      toast.error('예약 취소에 실패했습니다.');
     } else {
+      toast.success(`${selectedLab} ${selectedTimeSlot} 예약이 취소되었습니다.`);
       onReservationUpdate(); // Notify App.js to refetch all data
     }
     handleCloseModal();

@@ -5,6 +5,8 @@ import { LABS } from './constants';
 import { supabase } from './supabaseClient';
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [studentId, setStudentId] = useState('');
@@ -137,6 +139,7 @@ function App() {
           onReservationUpdate={fetchAllReservations}
         />
       </main>
+      <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </div>
   );
 }
