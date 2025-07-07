@@ -24,6 +24,7 @@
   color: #333;
   display: block; /* Add this to make it fill the width */
   padding: .5rem 1rem; /* Add some padding */
+  width: 100%; /* Ensure the button takes full width */
 }
 
 .nav-link:hover {
