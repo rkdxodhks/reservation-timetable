@@ -57,3 +57,16 @@ main {
     margin-left: 16.666667%; /* col-lg-2 width */
   }
 }
+
+/* Mobile-specific styles */
+@media (max-width: 767.98px) {
+  .sidebar {
+    position: relative;
+    height: auto;
+    box-shadow: none;
+  }
+
+  main {
+    margin-left: 0;
+  }
+}

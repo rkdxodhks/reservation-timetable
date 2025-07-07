@@ -29,6 +29,7 @@ function App() {
         {/* Left Sidebar for Lab Selection */}
         <nav className="col-12 col-md-3 col-lg-2 bg-light sidebar">
           <div className="position-sticky pt-3">
+            <img src="/bio-mat-logo.jpg" alt="Bio-Mat Logo" className="img-fluid mb-3" />
             <h6 className="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
               <span>실험실 목록</span>
             </h6>
