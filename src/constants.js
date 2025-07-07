@@ -8,14 +8,23 @@ export const LABS = [
 ];
 
 export const generateTimeSlots = () => {
-  return [
-    // 오전
-    '10:00', '10:15',
-    // 10:30 ~ 10:45 휴게
-    '10:45', '11:00', '11:15', '11:30', '11:45',
-    // 12:00 ~ 13:45 점심
-    // 오후
-    '13:45', '14:00', '14:15', '14:30', '14:45', '15:00', '15:15',
-    // 15:15 ~ 15:30 마지막
-  ];
+  const slots = [];
+  // 오전: 10:00, 10:20 (10:30 제외)
+  slots.push('10:00', '10:20');
+
+  // 오전: 10:40 ~ 11:40 (20분 간격)
+  for (let i = 40; i <= 100; i += 20) {
+      const hour = Math.floor(10 + i / 60);
+      const minute = i % 60;
+      slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+  }
+
+  // 오후: 14:00 ~ 15:20 (20분 간격, 12:00-13:45 점심시간 제외)
+  for (let i = 0; i <= 80; i += 20) {
+      const hour = Math.floor(14 + i / 60);
+      const minute = i % 60;
+      slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+  }
+  
+  return slots;
 };
