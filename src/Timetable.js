@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { supabase } from './supabaseClient';
 import { generateTimeSlots, MAX_RESERVATIONS_PER_SLOT } from './constants';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Modal, Button } from 'react-bootstrap';
+import { Modal, Button, Spinner } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 
 const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservations, onReservationUpdate }) => {
   const [showModal, setShowModal] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const timeSlots = generateTimeSlots();
 
@@ -17,6 +18,7 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
   };
 
   const handleCloseModal = () => {
+    if (loading) return; // Don't close modal while loading
     setShowModal(false);
     setSelectedTimeSlot(null);
   };
@@ -27,27 +29,32 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
       return;
     }
 
-    const { error } = await supabase.from('reservations').insert([
-      { 
-        time_slot: selectedTimeSlot, 
-        student_id: studentId,
-        auth_number: authNumber,
-        date: selectedDate,
-        lab_id: selectedLab
-      }
-    ]);
+    setLoading(true);
+    try {
+      const { error } = await supabase.from('reservations').insert([
+        { 
+          time_slot: selectedTimeSlot, 
+          student_id: studentId,
+          auth_number: authNumber,
+          date: selectedDate,
+          lab_id: selectedLab
+        }
+      ]);
 
-    if (error) {
-      console.error('Error creating reservation:', error);
-      if (error.code === '23505') {
-        toast.error('이미 이 시간대에 예약하셨습니다.');
+      if (error) {
+        console.error('Error creating reservation:', error);
+        if (error.code === '23505') {
+          toast.error('이미 이 시간대에 예약하셨습니다.');
+        } else {
+          toast.error('예약에 실패했습니다. 오류가 발생했습니다.');
+        }
       } else {
-        toast.error('예약에 실패했습니다. 오류가 발생했습니다.');
+        onReservationUpdate(); // Notify App.js to refetch all data
       }
-    } else {
-      onReservationUpdate(); // Notify App.js to refetch all data
+    } finally {
+      setLoading(false);
+      handleCloseModal();
     }
-    handleCloseModal();
   };
 
   const handleCancelReservation = async () => {
@@ -58,37 +65,42 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
         return;
     }
 
-    let reservationToCancel = reservations.find(r => 
-        r.time_slot === selectedTimeSlot &&
-        (r.student_id === studentId || authNumber === MASTER_AUTH_NUMBER)
-    );
+    setLoading(true);
+    try {
+      let reservationToCancel = reservations.find(r => 
+          r.time_slot === selectedTimeSlot &&
+          (r.student_id === studentId || authNumber === MASTER_AUTH_NUMBER)
+      );
 
-    if (!reservationToCancel) {
-        const { data, error } = await supabase
-            .from('reservations')
-            .select('id')
-            .eq('time_slot', selectedTimeSlot)
-            .eq('date', selectedDate)
-            .eq('lab_id', selectedLab)
-            .limit(1)
-            .single();
-        if (error || !data) {
-            toast.error('취소할 예약 정보를 찾을 수 없습니다.');
-            return;
-        }
-        reservationToCancel = { id: data.id }; // We only need the id for deletion
-    }
+      if (!reservationToCancel) {
+          const { data, error } = await supabase
+              .from('reservations')
+              .select('id')
+              .eq('time_slot', selectedTimeSlot)
+              .eq('date', selectedDate)
+              .eq('lab_id', selectedLab)
+              .limit(1)
+              .single();
+          if (error || !data) {
+              toast.error('취소할 예약 정보를 찾을 수 없습니다.');
+              return; // Early return will be caught by finally
+          }
+          reservationToCancel = { id: data.id }; // We only need the id for deletion
+      }
 
-    const { error: deleteError } = await supabase.from('reservations').delete().match({ id: reservationToCancel.id });
-    
-    if (deleteError) {
-      console.error('Error canceling reservation:', deleteError);
-      toast.error('예약 취소에 실패했습니다.');
-    } else {
-      toast.success(`${selectedLab} ${selectedTimeSlot} 예약이 취소되었습니다.`);
-      onReservationUpdate(); // Notify App.js to refetch all data
+      const { error: deleteError } = await supabase.from('reservations').delete().match({ id: reservationToCancel.id });
+      
+      if (deleteError) {
+        console.error('Error canceling reservation:', deleteError);
+        toast.error('예약 취소에 실패했습니다.');
+      } else {
+        toast.success(`${selectedLab} ${selectedTimeSlot} 예약이 취소되었습니다.`);
+        onReservationUpdate(); // Notify App.js to refetch all data
+      }
+    } finally {
+      setLoading(false);
+      handleCloseModal();
     }
-    handleCloseModal();
   };
 
   const renderModalContent = () => {
@@ -104,8 +116,17 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
         modalBody = <p>학번과 인증번호를 입력 후, 아래 버튼을 눌러 예약을 취소하세요.</p>;
         modalFooter = (
             <>
-                <Button variant="secondary" onClick={handleCloseModal}>닫기</Button>
-                <Button variant="danger" onClick={handleCancelReservation}>예약 취소하기</Button>
+                <Button variant="secondary" onClick={handleCloseModal} disabled={loading}>닫기</Button>
+                <Button variant="danger" onClick={handleCancelReservation} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                      <span className="ms-2">취소 중...</span>
+                    </>
+                  ) : (
+                    '예약 취소하기'
+                  )}
+                </Button>
             </>
         );
     } else if (isFull) {
@@ -127,14 +148,23 @@ const Timetable = ({ studentId, authNumber, selectedLab, selectedDate, reservati
         );
         modalFooter = (
             <>
-                <Button variant="secondary" onClick={handleCloseModal}>닫기</Button>
-                <Button variant="primary" onClick={handleConfirmReservation}>예약하기</Button>
+                <Button variant="secondary" onClick={handleCloseModal} disabled={loading}>닫기</Button>
+                <Button variant="primary" onClick={handleConfirmReservation} disabled={loading}>
+                  {loading ? (
+                    <>
+                      <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" />
+                      <span className="ms-2">예약 중...</span>
+                    </>
+                  ) : (
+                    '예약하기'
+                  )}
+                </Button>
             </>
         );
     }
 
     return (
-      <Modal show={showModal} onHide={handleCloseModal}>
+      <Modal show={showModal} onHide={handleCloseModal} backdrop={loading ? 'static' : true}>
         <Modal.Header closeButton>
           <Modal.Title>{selectedLab} - {selectedTimeSlot}</Modal.Title>
         </Modal.Header>
