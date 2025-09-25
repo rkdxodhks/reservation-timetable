@@ -63,26 +63,49 @@ const Timetable = ({
         }
       }
 
-      const { error } = await supabase.from("reservations").insert([
-        {
-          time_slot: selectedTimeSlot,
-          student_id: studentId,
-          student_name: studentName,
-          auth_number: authNumber,
-          date: selectedDate,
-          lab_id: selectedLab,
-        },
-      ]);
+      const payloadWithName = {
+        time_slot: selectedTimeSlot,
+        student_id: studentId,
+        student_name: studentName,
+        auth_number: authNumber,
+        date: selectedDate,
+        lab_id: selectedLab,
+      };
+
+      // 1차: 이름 컬럼 포함 시도
+      let { error } = await supabase
+        .from("reservations")
+        .insert([payloadWithName]);
+
+      // student_name 컬럼 미존재 시 재시도
+      if (
+        error &&
+        (error.message || "").toLowerCase().includes("student_name")
+      ) {
+        const { error: retryError } = await supabase
+          .from("reservations")
+          .insert([
+            {
+              time_slot: selectedTimeSlot,
+              student_id: studentId,
+              auth_number: authNumber,
+              date: selectedDate,
+              lab_id: selectedLab,
+            },
+          ]);
+        error = retryError;
+      }
 
       if (error) {
         console.error("Error creating reservation:", error);
         if (error.code === "23505") {
           toast.error("이미 이 시간대에 예약하셨습니다.");
         } else {
-          toast.error("예약에 실패했습니다. 오류가 발생했습니다.");
+          const details = error.message || "오류가 발생했습니다.";
+          toast.error(`예약에 실패했습니다: ${details}`);
         }
       } else {
-        toast.success("예약이 완료되었습니다. 예약한 시간에 꼭 방문해 주세요.");
+        toast.success("예약이 완료되었습니다. 예약한 시간에 방문해주세요.");
         onReservationUpdate(); // Notify App.js to refetch all data
       }
     } finally {
