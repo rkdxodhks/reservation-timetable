@@ -1,70 +1,44 @@
-# Getting Started with Create React App
+# 연구실 체험부스 실시간 예약 시스템 (2025)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+이 프로젝트는 교내 행사 등에서 사용할 수 있는 연구실 체험 부스 예약 시스템입니다. React와 Supabase를 사용하여 실시간으로 예약 현황을 확인할 수 있습니다.
 
-## Available Scripts
+## ✨ 주요 기능
 
-In the project directory, you can run:
+-   **실시간 예약 현황:** Supabase의 Realtime 기능을 사용하여 다른 사용자의 예약 현황이 실시간으로 업데이트됩니다.
+-   **직관적인 UI:** 예약 가능한 시간, 부분적으로 예약된 시간, 예약이 마감된 시간, 나의 예약, 예약 불가 상태를 색상으로 구분하여 쉽게 파악할 수 있습니다.
+-   **예약 제한 기능:** 한 학번당 전체 기간(오늘, 내일)에 걸쳐 최대 2회까지만 예약할 수 있습니다.
+-   **간편한 예약 및 취소:** 시간표의 카드를 클릭하여 간단하게 예약하거나 취소할 수 있습니다.
 
-### `npm start`
+## 🚀 시작하기
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 1. 프로젝트 복제
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```bash
+git clone https://github.com/rkdxodhks/reservation-timetable.git
+cd reservation-timetable
+```
 
-### `npm test`
+### 2. 의존성 설치
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm install
+```
 
-### `npm run build`
+### 3. Supabase 환경 변수 설정
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+프로젝트 루트 디렉토리에 `.env` 파일을 생성하고, 자신의 Supabase 프로젝트 정보를 입력합니다.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+REACT_APP_SUPABASE_URL=your-supabase-url
+REACT_APP_SUPABASE_ANON_KEY=your-supabase-anon-key
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+> **참고:** Supabase 프로젝트의 URL과 `anon` 키는 Supabase 대시보드의 `Settings` > `API` 메뉴에서 확인할 수 있습니다.
 
-### `npm run eject`
+### 4. 애플리케이션 실행
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```bash
+npm start
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+브라우저에서 `http://localhost:3000` 주소로 접속하여 시스템을 확인할 수 있습니다.
