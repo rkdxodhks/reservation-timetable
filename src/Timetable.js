@@ -31,7 +31,7 @@ const Timetable = ({
     );
 
     if (currentReservationCount >= 2 && !isMyReservation) {
-      toast.warning("이미 해당 날짜에 2회 예약하셨습니다.");
+      toast.warning("예약은 최대 2회까지만 가능합니다.");
       return;
     }
 
@@ -53,44 +53,22 @@ const Timetable = ({
 
     setLoading(true);
     try {
-      // 동일 학번의 해당 날짜 최대 2건 제한
-      console.log("Checking existing reservations for:", {
-        studentId,
-        selectedDate,
-      });
-      const { data: existing, error: countError } = await supabase
+      // Server-side double check for the reservation count.
+      const { count, error: countError } = await supabase
         .from("reservations")
-        .select("id, student_id, time_slot, lab_id")
-        .eq("date", selectedDate)
+        .select("id", { head: true, count: 'exact' })
         .eq("student_id", studentId);
-
-      console.log("Existing reservations query result:", {
-        existing,
-        countError,
-      });
 
       if (countError) {
         console.error("Error checking existing reservations:", countError);
-        console.error("Count error details:", {
-          code: countError.code,
-          message: countError.message,
-          details: countError.details,
-        });
         toast.error("예약 확인 중 오류가 발생했습니다.");
+        setLoading(false);
         return;
       }
 
-      // 안전한 데이터 처리
-      const existingReservations = existing || [];
-      const currentReservationCount = existingReservations.length;
-
-      if (currentReservationCount >= 2) {
-        const reservationList = existingReservations
-          .map((r) => `${r.lab_id} ${r.time_slot}`)
-          .join(", ");
-        toast.error(
-          `이미 해당 날짜에 2회 예약하셨습니다. (${reservationList})`
-        );
+      if (count >= 2) {
+        toast.error("예약은 최대 2회까지만 가능합니다.");
+        setLoading(false);
         return;
       }
 
@@ -106,36 +84,15 @@ const Timetable = ({
       console.log("Creating reservation with data:", reservationData);
 
       // 예약 생성
-      console.log("Attempting to insert reservation:", reservationData);
       const { data: insertData, error } = await supabase
         .from("reservations")
         .insert([reservationData])
         .select();
 
-      console.log("Insert result:", { insertData, error });
-
       if (error) {
         console.error("Error creating reservation:", error);
-        console.error("Error details:", {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
-
         if (error.code === "23505") {
           toast.error("이미 이 시간대에 예약하셨습니다.");
-        } else if (error.code === "PGRST116") {
-          toast.error(
-            "데이터베이스 연결에 문제가 있습니다. 관리자에게 문의하세요."
-          );
-        } else if (
-          error.message &&
-          error.message.includes("Supabase not configured")
-        ) {
-          toast.error(
-            "데이터베이스가 설정되지 않았습니다. 관리자에게 문의하세요."
-          );
         } else {
           const details = error.message || "오류가 발생했습니다.";
           toast.error(`예약에 실패했습니다: ${details}`);
@@ -185,12 +142,10 @@ const Timetable = ({
         return;
       }
 
-      const reservationToCancel = reservationData;
-
       const { error: deleteError } = await supabase
         .from("reservations")
         .delete()
-        .match({ id: reservationToCancel.id });
+        .match({ id: reservationData.id });
 
       if (deleteError) {
         console.error("Error canceling reservation:", deleteError);
@@ -276,10 +231,10 @@ const Timetable = ({
     } else if (isReservationLimitReached) {
       modalBody = (
         <>
-          <p>이미 해당 날짜에 2회 예약하셨습니다.</p>
+          <p>예약은 최대 2회까지만 가능합니다.</p>
           <div className="alert alert-warning mt-3">
             <small>
-              <strong>예약 제한:</strong> 한 학번당 하루에 최대 2회까지 예약
+              <strong>예약 제한:</strong> 한 학번당 전체 기간 중 최대 2회까지 예약
               가능합니다.
             </small>
           </div>
@@ -304,7 +259,7 @@ const Timetable = ({
           )}
           <div className="alert alert-info mt-3">
             <small>
-              <strong>예약 제한 안내:</strong> 한 학번당 하루에 최대 2회까지
+              <strong>예약 제한 안내:</strong> 한 학번당 전체 기간 중 최대 2회까지
               예약 가능합니다.
             </small>
           </div>

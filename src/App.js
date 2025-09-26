@@ -92,23 +92,23 @@ function App() {
     setSelectedDate(date.toISOString().split("T")[0]);
   };
 
-  // 현재 선택된 날짜와 학번에 대한 예약 횟수 계산
+  // 전체 기간에 대한 학생의 총 예약 횟수 계산
   const updateReservationCount = useCallback(() => {
     if (!studentId) {
       setCurrentReservationCount(0);
       return;
     }
 
-    const currentReservations =
-      selectedDate === todayStr
-        ? reservationsByDate.today
-        : reservationsByDate.tomorrow;
+    const allReservations = [
+      ...reservationsByDate.today,
+      ...reservationsByDate.tomorrow,
+    ];
 
-    const count = currentReservations.filter(
+    const count = allReservations.filter(
       (r) => r.student_id === studentId
     ).length;
     setCurrentReservationCount(count);
-  }, [studentId, selectedDate, todayStr, reservationsByDate]);
+  }, [studentId, reservationsByDate]);
 
   useEffect(() => {
     updateReservationCount();
@@ -229,7 +229,7 @@ function App() {
             진행하세요.
           </p>
           <p className="mb-0">
-            <strong>예약 제한:</strong> 한 학번당 하루에 최대 2회까지 예약
+            <strong>예약 제한:</strong> 한 학번당 전체 기간 중 최대 2회까지 예약
             가능합니다.
           </p>
           <p className="mb-0">
