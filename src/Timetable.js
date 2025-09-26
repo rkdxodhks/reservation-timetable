@@ -12,6 +12,7 @@ const Timetable = ({
   selectedLab,
   selectedDate,
   reservations,
+  currentReservationCount,
   onReservationUpdate,
 }) => {
   const [showModal, setShowModal] = useState(false);
@@ -21,96 +22,132 @@ const Timetable = ({
   const timeSlots = generateTimeSlots();
 
   const handleCardClick = (timeSlot) => {
+    // 예약 제한에 도달했고, 해당 시간대에 내 예약이 없는 경우 클릭 방지
+    const reservationsForSlot = reservations.filter(
+      (r) => r.time_slot === timeSlot
+    );
+    const isMyReservation = reservationsForSlot.some(
+      (r) => r.student_id === studentId
+    );
+
+    if (currentReservationCount >= 2 && !isMyReservation) {
+      toast.warning("이미 해당 날짜에 2회 예약하셨습니다.");
+      return;
+    }
+
     setSelectedTimeSlot(timeSlot);
     setShowModal(true);
   };
 
-  const handleCloseModal = () => {
-    if (loading) return; // Don't close modal while loading
+  const handleCloseModal = (force = false) => {
+    if (loading && !force) return; // Don't close modal while loading unless forced
     setShowModal(false);
     setSelectedTimeSlot(null);
   };
 
   const handleConfirmReservation = async () => {
-    if (!studentId || !studentName || !authNumber) {
-      toast.error("학번, 이름, 인증번호를 모두 입력해주세요.");
+    if (!studentId || !authNumber) {
+      toast.error("학번과 인증번호를 모두 입력해주세요.");
       return;
     }
 
     setLoading(true);
     try {
-      // 동일 학번 또는 이름의 해당 날짜 최대 2건 제한
+      // 동일 학번의 해당 날짜 최대 2건 제한
+      console.log("Checking existing reservations for:", {
+        studentId,
+        selectedDate,
+      });
       const { data: existing, error: countError } = await supabase
         .from("reservations")
-        .select("id, student_id, student_name", { count: "exact", head: false })
-        .eq("date", selectedDate);
+        .select("id, student_id, time_slot, lab_id")
+        .eq("date", selectedDate)
+        .eq("student_id", studentId);
+
+      console.log("Existing reservations query result:", {
+        existing,
+        countError,
+      });
 
       if (countError) {
         console.error("Error checking existing reservations:", countError);
-      } else {
-        const sameIdCount = existing.filter(
-          (r) => r.student_id === studentId
-        ).length;
-        const sameNameCount = existing.filter(
-          (r) => r.student_name === studentName
-        ).length;
-        if (sameIdCount >= 2 || sameNameCount >= 2) {
-          toast.error(
-            "동일 학번/이름의 해당 날짜 예약은 최대 2건까지 가능합니다."
-          );
-          setLoading(false);
-          return;
-        }
+        console.error("Count error details:", {
+          code: countError.code,
+          message: countError.message,
+          details: countError.details,
+        });
+        toast.error("예약 확인 중 오류가 발생했습니다.");
+        return;
       }
 
-      const payloadWithName = {
+      // 안전한 데이터 처리
+      const existingReservations = existing || [];
+      const currentReservationCount = existingReservations.length;
+
+      if (currentReservationCount >= 2) {
+        const reservationList = existingReservations
+          .map((r) => `${r.lab_id} ${r.time_slot}`)
+          .join(", ");
+        toast.error(
+          `이미 해당 날짜에 2회 예약하셨습니다. (${reservationList})`
+        );
+        return;
+      }
+
+      // 예약 데이터 생성 (필수 필드만)
+      const reservationData = {
         time_slot: selectedTimeSlot,
         student_id: studentId,
-        student_name: studentName,
         auth_number: authNumber,
         date: selectedDate,
         lab_id: selectedLab,
       };
 
-      // 1차: 이름 컬럼 포함 시도
-      let { error } = await supabase
-        .from("reservations")
-        .insert([payloadWithName]);
+      console.log("Creating reservation with data:", reservationData);
 
-      // student_name 컬럼 미존재 시 재시도
-      if (
-        error &&
-        (error.message || "").toLowerCase().includes("student_name")
-      ) {
-        const { error: retryError } = await supabase
-          .from("reservations")
-          .insert([
-            {
-              time_slot: selectedTimeSlot,
-              student_id: studentId,
-              auth_number: authNumber,
-              date: selectedDate,
-              lab_id: selectedLab,
-            },
-          ]);
-        error = retryError;
-      }
+      // 예약 생성
+      console.log("Attempting to insert reservation:", reservationData);
+      const { data: insertData, error } = await supabase
+        .from("reservations")
+        .insert([reservationData])
+        .select();
+
+      console.log("Insert result:", { insertData, error });
 
       if (error) {
         console.error("Error creating reservation:", error);
+        console.error("Error details:", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+
         if (error.code === "23505") {
           toast.error("이미 이 시간대에 예약하셨습니다.");
+        } else if (error.code === "PGRST116") {
+          toast.error(
+            "데이터베이스 연결에 문제가 있습니다. 관리자에게 문의하세요."
+          );
+        } else if (
+          error.message &&
+          error.message.includes("Supabase not configured")
+        ) {
+          toast.error(
+            "데이터베이스가 설정되지 않았습니다. 관리자에게 문의하세요."
+          );
         } else {
           const details = error.message || "오류가 발생했습니다.";
           toast.error(`예약에 실패했습니다: ${details}`);
         }
       } else {
+        console.log("Reservation created successfully:", insertData);
         toast.success("예약이 완료되었습니다. 예약한 시간에 방문해주세요.");
         onReservationUpdate(); // Notify App.js to refetch all data
       }
     } finally {
       setLoading(false);
-      handleCloseModal();
+      handleCloseModal(true);
     }
   };
 
@@ -166,7 +203,7 @@ const Timetable = ({
       }
     } finally {
       setLoading(false);
-      handleCloseModal();
+      handleCloseModal(true);
     }
   };
 
@@ -180,6 +217,7 @@ const Timetable = ({
       (r) => r.student_id === studentId
     );
     const isFull = reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT;
+    const isReservationLimitReached = currentReservationCount >= 2;
 
     let modalBody, modalFooter;
 
@@ -235,6 +273,23 @@ const Timetable = ({
           닫기
         </Button>
       );
+    } else if (isReservationLimitReached) {
+      modalBody = (
+        <>
+          <p>이미 해당 날짜에 2회 예약하셨습니다.</p>
+          <div className="alert alert-warning mt-3">
+            <small>
+              <strong>예약 제한:</strong> 한 학번당 하루에 최대 2회까지 예약
+              가능합니다.
+            </small>
+          </div>
+        </>
+      );
+      modalFooter = (
+        <Button variant="secondary" onClick={handleCloseModal}>
+          닫기
+        </Button>
+      );
     } else {
       modalBody = (
         <>
@@ -247,6 +302,12 @@ const Timetable = ({
                 .join(", ")}
             </p>
           )}
+          <div className="alert alert-info mt-3">
+            <small>
+              <strong>예약 제한 안내:</strong> 한 학번당 하루에 최대 2회까지
+              예약 가능합니다.
+            </small>
+          </div>
         </>
       );
       modalFooter = (
@@ -306,15 +367,14 @@ const Timetable = ({
     if (isMyReservation) return "bg-success"; // My reservation
     if (reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT)
       return "bg-danger"; // Full
+    if (currentReservationCount >= 2 && !isMyReservation) return "bg-secondary"; // Reservation limit reached
     if (reservationsForSlot.length > 0) return "bg-warning"; // Partially reserved
     return "bg-light"; // Available
   };
 
   const formatReservationDisplay = (reservation) => {
     const id = reservation.student_id || "";
-    const name = reservation.student_name || "";
-    console.log("Reservation data:", reservation); // 디버깅용
-    return name ? `${id}(${name})` : id;
+    return id;
   };
 
   return (

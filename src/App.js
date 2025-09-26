@@ -26,20 +26,34 @@ function App() {
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [currentReservationCount, setCurrentReservationCount] = useState(0);
 
   const fetchAllReservations = useCallback(async () => {
+    console.log("Fetching reservations for dates:", [todayStr, tomorrowStr]);
     const { data, error } = await supabase
       .from("reservations")
       .select("*")
       .in("date", [todayStr, tomorrowStr]);
 
+    console.log("Fetch result:", { data, error });
+
     if (error) {
       console.error("Error fetching reservations:", error);
+      console.error("Fetch error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+      });
+      // 오류가 발생해도 빈 배열로 설정하여 앱이 계속 작동하도록 함
+      setReservationsByDate({
+        today: [],
+        tomorrow: [],
+      });
     } else {
       console.log("Fetched reservations data:", data); // 디버깅용
       setReservationsByDate({
-        today: data.filter((r) => r.date === todayStr),
-        tomorrow: data.filter((r) => r.date === tomorrowStr),
+        today: (data || []).filter((r) => r.date === todayStr),
+        tomorrow: (data || []).filter((r) => r.date === tomorrowStr),
       });
     }
   }, [todayStr, tomorrowStr]);
@@ -77,6 +91,28 @@ function App() {
   const handleDateChange = (date) => {
     setSelectedDate(date.toISOString().split("T")[0]);
   };
+
+  // 현재 선택된 날짜와 학번에 대한 예약 횟수 계산
+  const updateReservationCount = useCallback(() => {
+    if (!studentId) {
+      setCurrentReservationCount(0);
+      return;
+    }
+
+    const currentReservations =
+      selectedDate === todayStr
+        ? reservationsByDate.today
+        : reservationsByDate.tomorrow;
+
+    const count = currentReservations.filter(
+      (r) => r.student_id === studentId
+    ).length;
+    setCurrentReservationCount(count);
+  }, [studentId, selectedDate, todayStr, reservationsByDate]);
+
+  useEffect(() => {
+    updateReservationCount();
+  }, [updateReservationCount]);
 
   return (
     <div className="container mt-4">
@@ -169,6 +205,19 @@ function App() {
                   />
                 </div>
               </div>
+              {studentId && (
+                <div className="mt-3 p-2 bg-light rounded">
+                  <small className="text-muted">
+                    <strong>현재 예약 현황:</strong> {currentReservationCount}
+                    /2회
+                    {currentReservationCount >= 2 && (
+                      <span className="text-danger ms-2">
+                        (최대 예약 횟수 도달)
+                      </span>
+                    )}
+                  </small>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -180,10 +229,15 @@ function App() {
             진행하세요.
           </p>
           <p className="mb-0">
+            <strong>예약 제한:</strong> 한 학번당 하루에 최대 2회까지 예약
+            가능합니다.
+          </p>
+          <p className="mb-0">
             본인 예약은 <span className="text-success fw-bold">초록색</span>,
             타인 예약은 <span className="text-warning fw-bold">노란색</span>,
-            예약 마감은 <span className="text-danger fw-bold">빨간색</span>으로
-            표시됩니다.
+            예약 마감은 <span className="text-danger fw-bold">빨간색</span>,
+            예약 제한 도달은{" "}
+            <span className="text-secondary fw-bold">회색</span>으로 표시됩니다.
           </p>
         </div>
 
@@ -200,6 +254,7 @@ function App() {
                   (r) => r.lab_id === selectedLab
                 )
           }
+          currentReservationCount={currentReservationCount}
           onReservationUpdate={fetchAllReservations}
         />
       </main>
