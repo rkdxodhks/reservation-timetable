@@ -124,27 +124,31 @@ const Timetable = ({
 
     setLoading(true);
     try {
-      let reservationToCancel = reservations.find(
-        (r) =>
-          r.time_slot === selectedTimeSlot &&
-          (r.student_id === studentId || authNumber === MASTER_AUTH_NUMBER)
-      );
+      // 먼저 해당 시간대의 예약을 찾고 인증번호를 확인
+      const { data: reservationData, error: fetchError } = await supabase
+        .from("reservations")
+        .select("id, student_id, auth_number")
+        .eq("time_slot", selectedTimeSlot)
+        .eq("date", selectedDate)
+        .eq("lab_id", selectedLab)
+        .eq("student_id", studentId)
+        .single();
 
-      if (!reservationToCancel) {
-        const { data, error } = await supabase
-          .from("reservations")
-          .select("id")
-          .eq("time_slot", selectedTimeSlot)
-          .eq("date", selectedDate)
-          .eq("lab_id", selectedLab)
-          .limit(1)
-          .single();
-        if (error || !data) {
-          toast.error("취소할 예약 정보를 찾을 수 없습니다.");
-          return; // Early return will be caught by finally
-        }
-        reservationToCancel = { id: data.id }; // We only need the id for deletion
+      if (fetchError || !reservationData) {
+        toast.error("취소할 예약 정보를 찾을 수 없습니다.");
+        return;
       }
+
+      // 인증번호 검증 (마스터 인증번호가 아닌 경우)
+      if (
+        authNumber !== MASTER_AUTH_NUMBER &&
+        reservationData.auth_number !== authNumber
+      ) {
+        toast.error("인증번호가 일치하지 않습니다.");
+        return;
+      }
+
+      const reservationToCancel = reservationData;
 
       const { error: deleteError } = await supabase
         .from("reservations")
@@ -220,7 +224,9 @@ const Timetable = ({
           <p>이 시간대는 예약이 모두 마감되었습니다.</p>
           <p>
             <strong>예약자:</strong>{" "}
-            {reservationsForSlot.map((r) => r.student_id).join(", ")}
+            {reservationsForSlot
+              .map((r) => formatReservationDisplay(r))
+              .join(", ")}
           </p>
         </>
       );
@@ -236,7 +242,9 @@ const Timetable = ({
           {reservationsForSlot.length > 0 && (
             <p>
               <strong>현재 예약자:</strong>{" "}
-              {reservationsForSlot.map((r) => r.student_id).join(", ")}
+              {reservationsForSlot
+                .map((r) => formatReservationDisplay(r))
+                .join(", ")}
             </p>
           )}
         </>
@@ -302,6 +310,13 @@ const Timetable = ({
     return "bg-light"; // Available
   };
 
+  const formatReservationDisplay = (reservation) => {
+    const id = reservation.student_id || "";
+    const name = reservation.student_name || "";
+    console.log("Reservation data:", reservation); // 디버깅용
+    return name ? `${id}(${name})` : id;
+  };
+
   return (
     <div>
       <h2 className="text-center my-4">{selectedLab} 예약 현황</h2>
@@ -324,7 +339,7 @@ const Timetable = ({
                   <h5 className="card-title mb-1">{timeSlot}</h5>
                   <p className="card-text small text-truncate">
                     {reservationsForSlot
-                      .map((r) => r.student_name || r.student_id)
+                      .map((r) => formatReservationDisplay(r))
                       .join(", ") || "예약 가능"}
                   </p>
                   <p className="card-text small">

@@ -36,6 +36,7 @@ function App() {
     if (error) {
       console.error("Error fetching reservations:", error);
     } else {
+      console.log("Fetched reservations data:", data); // 디버깅용
       setReservationsByDate({
         today: data.filter((r) => r.date === todayStr),
         tomorrow: data.filter((r) => r.date === tomorrowStr),
