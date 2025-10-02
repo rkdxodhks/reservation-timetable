@@ -153,7 +153,7 @@ function App() {
           {...{ studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, selectedDate, setSelectedDate, todayStr, tomorrowStr, reservationsByDate, currentReservationCount, handleMyReservationClick }}
         />
 
-        <ReservationModal show={showReservationModal} onHide={() => setShowReservationModal(false)} context={modalContext} loading={loading} onConfirm={handleConfirmReservation} onCancel={handleCancelReservation} />
+        <ReservationModal show={showReservationModal} onHide={() => setShowReservationModal(false)} context={modalContext} loading={loading} onConfirm={handleConfirmReservation} onCancel={handleCancelReservation} dialogClassName="info-modal" />
         
         <ToastContainer position="bottom-center" autoClose={2000} hideProgressBar newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss={false} draggable={false} pauseOnHover theme="colored" />
       </main>

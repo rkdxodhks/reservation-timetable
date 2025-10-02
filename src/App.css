@@ -14,6 +14,7 @@
   --global-border-radius: 0.75rem; /* Reduced from 1rem */
   --card-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.07);
   --card-hover-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.1);
+  --modal-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.25);
 }
 
 body {
@@ -166,7 +167,7 @@ h1, h2, h3, h4, h5, h6 {
 .modal-content {
   border-radius: var(--global-border-radius) !important;
   border: none !important;
-  box-shadow: var(--card-shadow) !important;
+  box-shadow: var(--modal-shadow) !important;
 }
 
 .modal-header {
@@ -179,8 +180,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .modal-body {
-    padding: 0.5rem 1.5rem 1.5rem 1.5rem !important;
-    font-size: 1.1rem;
+    padding: 1.5rem !important;
+    font-size: 1rem;
 }
 
 .modal-footer {
@@ -261,7 +262,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Custom Modal Sizing */
 @media (max-width: 576px) {
   .info-modal .modal-dialog {
-    max-width: 90%;
+    max-width: 80%;
     margin: 1.75rem auto;
   }
 }
