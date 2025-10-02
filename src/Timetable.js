@@ -90,7 +90,11 @@ const Timetable = ({
         .select();
 
       if (error) {
-        console.error("Error creating reservation:", error);
+        console.error("Error creating reservation:", {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+        });
         if (error.code === "23505") {
           toast.error("이미 이 시간대에 예약하셨습니다.");
         } else {

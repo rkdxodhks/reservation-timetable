@@ -116,14 +116,14 @@ function App() {
 
   return (
     <div className="container mt-4">
-      <header className="text-center mb-5">
+      <header className="text-center p-4 mb-5 bg-light border-bottom">
         <img
           src="/baf-logo.png"
           alt="BAF Logo"
           className="img-fluid mb-3"
-          style={{ maxWidth: "220px" }}
+          style={{ maxWidth: "200px" }}
         />
-        <h1>연구실 체험부스 예약 시스템(2025)</h1>
+        <h1 className="h2">연구실 체험부스 예약 시스템 (2025)</h1>
       </header>
 
       <main>
@@ -131,12 +131,14 @@ function App() {
           reservationsByDate={reservationsByDate}
           selectedLab={selectedLab}
           onLabSelect={setSelectedLab}
+          studentId={studentId}
+          currentReservationCount={currentReservationCount}
         />
 
         <div className="row g-4 mb-5">
           <div className="col-12 col-lg-4">
             <div className="card p-4 h-100 shadow-sm">
-              <p className="mb-2 fw-bold">날짜 선택</p>
+              <h5 className="card-title mb-3">날짜 선택</h5>
               <div className="d-grid gap-2">
                 <button
                   className={`btn ${
@@ -163,10 +165,10 @@ function App() {
           </div>
           <div className="col-12 col-lg-8">
             <div className="card p-4 h-100 shadow-sm">
-              <p className="mb-2 fw-bold">예약자 정보</p>
+              <h5 className="card-title mb-3">예약자 정보</h5>
               <div className="row g-3">
                 <div className="col-md-4">
-                  <label htmlFor="studentId" className="form-label">
+                  <label htmlFor="studentId" className="form-label small">
                     학번
                   </label>
                   <input
@@ -179,7 +181,7 @@ function App() {
                   />
                 </div>
                 <div className="col-md-4">
-                  <label htmlFor="studentName" className="form-label">
+                  <label htmlFor="studentName" className="form-label small">
                     이름
                   </label>
                   <input
@@ -192,7 +194,7 @@ function App() {
                   />
                 </div>
                 <div className="col-md-4">
-                  <label htmlFor="authNumber" className="form-label">
+                  <label htmlFor="authNumber" className="form-label small">
                     인증번호
                   </label>
                   <input
@@ -205,40 +207,30 @@ function App() {
                   />
                 </div>
               </div>
-              {studentId && (
-                <div className="mt-3 p-2 bg-light rounded">
-                  <small className="text-muted">
-                    <strong>현재 예약 현황:</strong> {currentReservationCount}
-                    /2회
-                    {currentReservationCount >= 2 && (
-                      <span className="text-danger ms-2">
-                        (최대 예약 횟수 도달)
-                      </span>
-                    )}
-                  </small>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        <div className="card p-3 mb-4 shadow-sm">
-          <p className="mb-1 fw-bold">시스템 사용법</p>
-          <p className="mb-0">
-            학번과 인증번호를 입력하고, 원하는 실험실과 날짜를 선택한 후 예약을
-            진행하세요.
-          </p>
-          <p className="mb-0">
-            <strong>예약 제한:</strong> 한 학번당 전체 기간 중 최대 2회까지 예약
-            가능합니다.
-          </p>
-          <p className="mb-0">
-            본인 예약은 <span className="text-success fw-bold">초록색</span>,
-            타인 예약은 <span className="text-warning fw-bold">노란색</span>,
-            예약 마감은 <span className="text-danger fw-bold">빨간색</span>,
-            예약 제한 도달은{" "}
-            <span className="text-secondary fw-bold">회색</span>으로 표시됩니다.
-          </p>
+        <div className="alert alert-info mb-4">
+          <h6 className="alert-heading">시스템 사용법</h6>
+          <ul className="mb-0 small">
+            <li>
+              학번과 인증번호를 입력하고, 원하는 실험실과 날짜를 선택한 후
+              예약을 진행하세요.
+            </li>
+            <li>
+              <strong>예약 제한:</strong> 한 학번당 전체 기간 중 최대 2회까지
+              예약 가능합니다.
+            </li>
+            <li>
+              본인 예약은 <span className="text-success fw-bold">초록색</span>,
+              타인 예약은 <span className="text-warning fw-bold">노란색</span>,
+              예약 마감은 <span className="text-danger fw-bold">빨간색</span>,
+              예약 제한 도달은{" "}
+              <span className="text-secondary fw-bold">회색</span>으로
+              표시됩니다.
+            </li>
+          </ul>
         </div>
 
         <Timetable
