@@ -23,16 +23,14 @@ const Timetable = ({
     const reservationsForSlot = reservations.filter(
       (r) => r.time_slot === timeSlot
     );
-    const isMyReservation = reservationsForSlot.some(
-      (r) => r.student_id === studentId
-    );
 
-    if (currentReservationCount >= 2 && !isMyReservation) {
+    // Block click only if user's limit is reached AND the slot is available
+    if (currentReservationCount >= 2 && reservationsForSlot.length === 0) {
       toast.warning("예약은 최대 2회까지만 가능합니다.");
       return;
     }
 
-    // Pass the necessary info up to the parent
+    // For all other cases (my reservation, partially/fully booked slots), show the modal
     onCardClick(timeSlot, reservationsForSlot);
   };
 

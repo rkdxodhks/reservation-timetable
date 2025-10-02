@@ -7,9 +7,9 @@ import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import "./BottomSheet.css";
 import { Modal, Button, Spinner } from "react-bootstrap";
 
+// Main App Component
 function App() {
   // Global State
   const [studentId, setStudentId] = useState("");
@@ -20,12 +20,10 @@ function App() {
   const [selectedDate, setSelectedDate] = useState("");
   const [currentReservationCount, setCurrentReservationCount] = useState(0);
 
-  // UI State
-  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  // UI & Modal State
   const [loading, setLoading] = useState(false);
-
-  // Modal State
-  const [showModal, setShowModal] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
+  const [showReservationModal, setShowReservationModal] = useState(false);
   const [modalContext, setModalContext] = useState(null);
 
   const channelRef = useRef(null);
@@ -73,23 +71,23 @@ function App() {
     updateReservationCount();
   }, [studentId, reservationsByDate, updateReservationCount]);
 
-  const handleShowModal = (context) => {
-    if (!studentId || !authNumber) {
-      toast.error("예약자 정보(학번, 인증번호)를 먼저 입력해주세요.");
-      setIsSheetExpanded(true);
+  const handleShowReservationModal = (context) => {
+    if (!studentId || !authNumber || !studentName) {
+      toast.error("예약자 정보를 모두 입력해주세요.");
+      setShowInfoModal(true);
       return;
     }
     setModalContext(context);
-    setShowModal(true);
+    setShowReservationModal(true);
   };
 
   const handleTimeSlotClick = (timeSlot, reservationsForSlot) => {
     const isMyReservation = reservationsForSlot.some((r) => r.student_id === studentId);
-    handleShowModal({ type: isMyReservation ? "cancel" : "confirm", timeSlot, lab: selectedLab, date: selectedDate, reservationsForSlot });
+    handleShowReservationModal({ type: isMyReservation ? "cancel" : "confirm", timeSlot, lab: selectedLab, date: selectedDate, reservationsForSlot });
   };
 
   const handleMyReservationClick = (reservation) => {
-    handleShowModal({ type: "cancel", timeSlot: reservation.time_slot, lab: reservation.lab_id, date: reservation.date, reservationId: reservation.id });
+    handleShowReservationModal({ type: "cancel", timeSlot: reservation.time_slot, lab: reservation.lab_id, date: reservation.date, reservationId: reservation.id });
   };
 
   const handleConfirmReservation = async () => {
@@ -102,18 +100,15 @@ function App() {
         toast.error("예약은 최대 2회까지만 가능합니다.");
         return;
       }
-
       const { error } = await supabase.from("reservations").insert([{ time_slot: modalContext.timeSlot, student_id: studentId, student_name: studentName, auth_number: authNumber, date: modalContext.date, lab_id: modalContext.lab }]);
       if (error) throw error;
-
       toast.success("예약이 완료되었습니다.");
-      fetchAllReservations();
     } catch (error) {
       console.error("Error creating reservation:", error);
       toast.error(`예약 실패: ${error.message}`);
     } finally {
       setLoading(false);
-      setShowModal(false);
+      setShowReservationModal(false);
     }
   };
 
@@ -123,115 +118,96 @@ function App() {
     try {
       const { data: res, error: fetchError } = await supabase.from("reservations").select("id, auth_number").eq("time_slot", modalContext.timeSlot).eq("date", modalContext.date).eq("lab_id", modalContext.lab).eq("student_id", studentId).single();
       if (fetchError || !res) throw new Error("취소할 예약 정보를 찾을 수 없습니다.");
-
       const MASTER_AUTH_NUMBER = process.env.REACT_APP_MASTER_AUTH_NUMBER;
       if (authNumber !== MASTER_AUTH_NUMBER && res.auth_number !== authNumber) {
         toast.error("인증번호가 일치하지 않습니다.");
         return;
       }
-
       const { error: deleteError } = await supabase.from("reservations").delete().match({ id: res.id });
       if (deleteError) throw deleteError;
-
       toast.success("예약이 취소되었습니다.");
-      fetchAllReservations();
     } catch (error) {
       console.error("Error canceling reservation:", error);
       toast.error(`예약 취소 실패: ${error.message}`);
     } finally {
       setLoading(false);
-      setShowModal(false);
+      setShowReservationModal(false);
     }
   };
 
-  const renderMobileView = () => (
-    <main style={{ paddingBottom: "6rem" }}>
-      <div className="lab-filter-header">
-        <LabsList selectedLab={selectedLab} onLabSelect={setSelectedLab} />
-      </div>
-      <Timetable studentId={studentId} selectedLab={selectedLab} reservations={selectedDate === todayStr ? reservationsByDate.today.filter(r => r.lab_id === selectedLab) : reservationsByDate.tomorrow.filter(r => r.lab_id === selectedLab)} currentReservationCount={currentReservationCount} onCardClick={handleTimeSlotClick} />
-      <div className={`bottom-sheet ${isSheetExpanded ? "expanded" : ""}`}>
-        <div className="bottom-sheet-handle" onClick={() => setIsSheetExpanded(!isSheetExpanded)}></div>
-        <div className="bottom-sheet-content">
-          <div className="text-center mb-4">
-            <img src="/baf-logo.png" alt="BAF Logo" className="img-fluid" style={{ maxWidth: "120px" }} />
-          </div>
-          <div className="card p-3 my-3">
-            <h5 className="card-title mb-3">날짜 선택</h5>
-            <div className="row g-2">
-              <div className="col-6">
-                <button className={`btn w-100 fs-5 fw-bold ${selectedDate === todayStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(todayStr)}>11/11</button>
-              </div>
-              <div className="col-6">
-                <button className={`btn w-100 fs-5 fw-bold ${selectedDate === tomorrowStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(tomorrowStr)}>11/12</button>
-              </div>
-            </div>
-          </div>
-          <MyReservations studentId={studentId} reservationsByDate={reservationsByDate} currentReservationCount={currentReservationCount} onReservationClick={handleMyReservationClick} />
-          <div className="card p-3 my-3">
-            <h5 className="card-title mb-3">예약자 정보</h5>
-            <div className="row g-2 mb-2">
-              <div className="col-6">
-                <label className="form-label small">학번</label>
-                <input type="text" className="form-control" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="학번" />
-              </div>
-              <div className="col-6">
-                <label className="form-label small">이름</label>
-                <input type="text" className="form-control" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="이름" />
-              </div>
-            </div>
-            <div>
-              <label className="form-label small">인증번호</label>
-              <input type="password" className="form-control" value={authNumber} onChange={(e) => setAuthNumber(e.target.value)} placeholder="4자리" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-
-  
-
   return (
     <div className="container p-0 p-sm-4">
-      <header className="text-center p-3 mb-4 bg-light border-bottom d-none d-lg-block">
-        <img src="/baf-logo.png" alt="BAF Logo" className="img-fluid mb-3" style={{ maxWidth: "180px" }} />
-        <h1 className="h3">연구실 체험부스 예약 시스템 (2025)</h1>
-      </header>
-      {renderMobileView()} 
-      <ReservationModal show={showModal} onHide={() => setShowModal(false)} context={modalContext} loading={loading} onConfirm={handleConfirmReservation} onCancel={handleCancelReservation} />
-      <ToastContainer
-        position="bottom-center"
-        autoClose={2000}
-        hideProgressBar
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss={false}
-        draggable={false}
-        pauseOnHover
-        theme="colored"
-      />
+      <main>
+        <div className="lab-filter-header">
+          <LabsList selectedLab={selectedLab} onLabSelect={setSelectedLab} />
+        </div>
+        <Timetable studentId={studentId} selectedLab={selectedLab} reservations={selectedDate === todayStr ? reservationsByDate.today.filter(r => r.lab_id === selectedLab) : reservationsByDate.tomorrow.filter(r => r.lab_id === selectedLab)} currentReservationCount={currentReservationCount} onCardClick={handleTimeSlotClick} />
+        
+        <button className="fab" onClick={() => setShowInfoModal(true)}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+
+        <InfoModal 
+          show={showInfoModal} 
+          onHide={() => setShowInfoModal(false)}
+          {...{ studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, selectedDate, setSelectedDate, todayStr, tomorrowStr, reservationsByDate, currentReservationCount, handleMyReservationClick }}
+        />
+
+        <ReservationModal show={showReservationModal} onHide={() => setShowReservationModal(false)} context={modalContext} loading={loading} onConfirm={handleConfirmReservation} onCancel={handleCancelReservation} />
+        
+        <ToastContainer position="bottom-center" autoClose={2000} hideProgressBar newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss={false} draggable={false} pauseOnHover theme="colored" />
+      </main>
     </div>
   );
 }
 
-const formatReservationDisplay = (reservation) => {
-  const id = reservation.student_id || "";
-  const name = reservation.student_name || "";
-  return `${id} ${name}`.trim();
-};
+// Helper: Info Modal
+const InfoModal = (props) => {
+  const { show, onHide, studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, selectedDate, setSelectedDate, todayStr, tomorrowStr, reservationsByDate, currentReservationCount, handleMyReservationClick } = props;
+  return (
+    <Modal show={show} onHide={onHide} centered scrollable dialogClassName="info-modal">
+      <Modal.Header closeButton>
+        <Modal.Title as="h5">정보 및 설정</Modal.Title>
+      </Modal.Header>
+      <Modal.Body>
+        <div className="text-center mb-4">
+          <img src="/baf-logo.png" alt="BAF Logo" className="img-fluid" style={{ maxWidth: "120px" }} />
+        </div>
+        <div className="card p-3 my-3">
+          <h5 className="card-title mb-3">날짜 선택</h5>
+          <div className="row g-2">
+            <div className="col-6"><button className={`btn w-100 fs-5 fw-bold ${selectedDate === todayStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(todayStr)}>11/11</button></div>
+            <div className="col-6"><button className={`btn w-100 fs-5 fw-bold ${selectedDate === tomorrowStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(tomorrowStr)}>11/12</button></div>
+          </div>
+        </div>
+        <MyReservations studentId={studentId} reservationsByDate={reservationsByDate} currentReservationCount={currentReservationCount} onReservationClick={handleMyReservationClick} />
+        <div className="card p-3 my-3">
+          <h5 className="card-title mb-3">예약자 정보</h5>
+          <div className="row g-2 mb-2">
+            <div className="col-6"><label className="form-label small">학번</label><input type="text" className="form-control" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="학번" /></div>
+            <div className="col-6"><label className="form-label small">이름</label><input type="text" className="form-control" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="이름" /></div>
+          </div>
+          <div><label className="form-label small">인증번호</label><input type="password" className="form-control" value={authNumber} onChange={(e) => setAuthNumber(e.target.value)} placeholder="4자리" /></div>
+        </div>
+      </Modal.Body>
+      <Modal.Footer>
+        <Button variant="primary" onClick={onHide} className="w-100">닫기</Button>
+      </Modal.Footer>
+    </Modal>
+  );
+}
 
+// Helper: Reservation Action Modal
 const ReservationModal = ({ show, onHide, context, loading, onConfirm, onCancel }) => {
   if (!context) return null;
-
   const { type, timeSlot, lab, reservationsForSlot } = context;
   const isMyReservation = type === 'cancel';
   const isFull = !isMyReservation && reservationsForSlot && reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT;
-
   let title = `${lab} - ${timeSlot.split(' ')[0]}`;
   let body = null;
   let footer = null;
+
+  const formatReservationDisplay = (r) => `${r.student_id || ""} ${r.student_name || ""}`.trim();
 
   const bookedBy = (
     reservationsForSlot && reservationsForSlot.length > 0 && (
