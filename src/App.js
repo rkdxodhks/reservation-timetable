@@ -190,7 +190,7 @@ function App() {
     </main>
   );
 
-  const renderDesktopView = () => renderMobileView(); // For now, let's use the same modern UI for desktop
+  
 
   return (
     <div className="container p-0 p-sm-4">
