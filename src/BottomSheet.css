@@ -1,0 +1,43 @@
+/* src/BottomSheet.css */
+.bottom-sheet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--card-background-color); /* Opaque white */
+  border-top-left-radius: var(--global-border-radius);
+  border-top-right-radius: var(--global-border-radius);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+  z-index: 1050; /* Below modals, above content */
+}
+
+.bottom-sheet-handle {
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+}
+
+.bottom-sheet-handle::before {
+  content: '';
+  display: block;
+  margin: 0 auto 0.5rem auto;
+  width: 40px;
+  height: 5px;
+  background-color: #d1d5db; /* A light grey handle */
+  border-radius: 2.5px;
+}
+
+.bottom-sheet-content {
+  padding: 0 1rem 1rem 1rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.bottom-sheet.expanded {
+  transform: translateY(0);
+}
+
+.bottom-sheet:not(.expanded) {
+  transform: translateY(calc(100% - 5rem)); /* Collapsed height */
+}

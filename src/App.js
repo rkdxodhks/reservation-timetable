@@ -1,56 +1,50 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import StatusPanel from "./StatusPanel";
+import { LabsList, MyReservations } from "./StatusPanel";
 import Timetable from "./Timetable";
-import { LABS } from "./constants";
+import { LABS, MAX_RESERVATIONS_PER_SLOT } from "./constants";
 import { supabase } from "./supabaseClient";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "./BottomSheet.css";
+import { Modal, Button, Spinner } from "react-bootstrap";
 
 function App() {
+  // Global State
   const [studentId, setStudentId] = useState("");
   const [studentName, setStudentName] = useState("");
   const [authNumber, setAuthNumber] = useState("");
   const [selectedLab, setSelectedLab] = useState(LABS[0]);
-  const [reservationsByDate, setReservationsByDate] = useState({
-    today: [],
-    tomorrow: [],
-  });
-  const channelRef = useRef(null);
+  const [reservationsByDate, setReservationsByDate] = useState({ today: [], tomorrow: [] });
+  const [selectedDate, setSelectedDate] = useState("");
+  const [currentReservationCount, setCurrentReservationCount] = useState(0);
 
+  // UI State
+  const [isSheetExpanded, setIsSheetExpanded] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [modalContext, setModalContext] = useState(null);
+
+  const channelRef = useRef(null);
   const today = new Date();
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const todayStr = today.toISOString().split("T")[0];
   const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [currentReservationCount, setCurrentReservationCount] = useState(0);
+  useEffect(() => {
+    setSelectedDate(todayStr);
+  }, [todayStr]);
 
   const fetchAllReservations = useCallback(async () => {
-    console.log("Fetching reservations for dates:", [todayStr, tomorrowStr]);
-    const { data, error } = await supabase
-      .from("reservations")
-      .select("*")
-      .in("date", [todayStr, tomorrowStr]);
-
-    console.log("Fetch result:", { data, error });
-
+    const { data, error } = await supabase.from("reservations").select("*").in("date", [todayStr, tomorrowStr]);
     if (error) {
       console.error("Error fetching reservations:", error);
-      console.error("Fetch error details:", {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-      });
-      // 오류가 발생해도 빈 배열로 설정하여 앱이 계속 작동하도록 함
-      setReservationsByDate({
-        today: [],
-        tomorrow: [],
-      });
+      setReservationsByDate({ today: [], tomorrow: [] });
     } else {
-      console.log("Fetched reservations data:", data); // 디버깅용
       setReservationsByDate({
         today: (data || []).filter((r) => r.date === todayStr),
         tomorrow: (data || []).filter((r) => r.date === tomorrowStr),
@@ -60,209 +54,217 @@ function App() {
 
   useEffect(() => {
     fetchAllReservations();
-
-    if (channelRef.current) {
-      supabase.removeChannel(channelRef.current);
-    }
-
-    const channel = supabase
-      .channel("reservations-all-days")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "reservations",
-          filter: `date=in.(${todayStr},${tomorrowStr})`,
-        },
-        () => fetchAllReservations()
-      )
-      .subscribe();
-
+    const channel = supabase.channel("reservations-all-days").on("postgres_changes", { event: "*", schema: "public", table: "reservations" }, fetchAllReservations).subscribe();
     channelRef.current = channel;
+    return () => { if (channelRef.current) supabase.removeChannel(channelRef.current); };
+  }, [fetchAllReservations]);
 
-    return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
-    };
-  }, [todayStr, tomorrowStr, fetchAllReservations]);
-
-  const handleDateChange = (date) => {
-    setSelectedDate(date.toISOString().split("T")[0]);
-  };
-
-  // 전체 기간에 대한 학생의 총 예약 횟수 계산
   const updateReservationCount = useCallback(() => {
     if (!studentId) {
       setCurrentReservationCount(0);
       return;
     }
-
-    const allReservations = [
-      ...reservationsByDate.today,
-      ...reservationsByDate.tomorrow,
-    ];
-
-    const count = allReservations.filter(
-      (r) => r.student_id === studentId
-    ).length;
+    const allReservations = [...reservationsByDate.today, ...reservationsByDate.tomorrow];
+    const count = allReservations.filter((r) => r.student_id === studentId).length;
     setCurrentReservationCount(count);
   }, [studentId, reservationsByDate]);
 
   useEffect(() => {
     updateReservationCount();
-  }, [updateReservationCount]);
+  }, [studentId, reservationsByDate, updateReservationCount]);
+
+  const handleShowModal = (context) => {
+    if (!studentId || !authNumber) {
+      toast.error("예약자 정보(학번, 인증번호)를 먼저 입력해주세요.");
+      setIsSheetExpanded(true);
+      return;
+    }
+    setModalContext(context);
+    setShowModal(true);
+  };
+
+  const handleTimeSlotClick = (timeSlot, reservationsForSlot) => {
+    const isMyReservation = reservationsForSlot.some((r) => r.student_id === studentId);
+    handleShowModal({ type: isMyReservation ? "cancel" : "confirm", timeSlot, lab: selectedLab, date: selectedDate, reservationsForSlot });
+  };
+
+  const handleMyReservationClick = (reservation) => {
+    handleShowModal({ type: "cancel", timeSlot: reservation.time_slot, lab: reservation.lab_id, date: reservation.date, reservationId: reservation.id });
+  };
+
+  const handleConfirmReservation = async () => {
+    if (!modalContext) return;
+    setLoading(true);
+    try {
+      const { count, error: countError } = await supabase.from("reservations").select("id", { head: true, count: 'exact' }).eq("student_id", studentId);
+      if (countError) throw countError;
+      if (count >= 2) {
+        toast.error("예약은 최대 2회까지만 가능합니다.");
+        return;
+      }
+
+      const { error } = await supabase.from("reservations").insert([{ time_slot: modalContext.timeSlot, student_id: studentId, student_name: studentName, auth_number: authNumber, date: modalContext.date, lab_id: modalContext.lab }]);
+      if (error) throw error;
+
+      toast.success("예약이 완료되었습니다.");
+      fetchAllReservations();
+    } catch (error) {
+      console.error("Error creating reservation:", error);
+      toast.error(`예약 실패: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setShowModal(false);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    if (!modalContext) return;
+    setLoading(true);
+    try {
+      const { data: res, error: fetchError } = await supabase.from("reservations").select("id, auth_number").eq("time_slot", modalContext.timeSlot).eq("date", modalContext.date).eq("lab_id", modalContext.lab).eq("student_id", studentId).single();
+      if (fetchError || !res) throw new Error("취소할 예약 정보를 찾을 수 없습니다.");
+
+      const MASTER_AUTH_NUMBER = process.env.REACT_APP_MASTER_AUTH_NUMBER;
+      if (authNumber !== MASTER_AUTH_NUMBER && res.auth_number !== authNumber) {
+        toast.error("인증번호가 일치하지 않습니다.");
+        return;
+      }
+
+      const { error: deleteError } = await supabase.from("reservations").delete().match({ id: res.id });
+      if (deleteError) throw deleteError;
+
+      toast.success("예약이 취소되었습니다.");
+      fetchAllReservations();
+    } catch (error) {
+      console.error("Error canceling reservation:", error);
+      toast.error(`예약 취소 실패: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setShowModal(false);
+    }
+  };
+
+  const renderMobileView = () => (
+    <main style={{ paddingBottom: "6rem" }}>
+      <div className="lab-filter-header">
+        <LabsList selectedLab={selectedLab} onLabSelect={setSelectedLab} />
+      </div>
+      <Timetable studentId={studentId} selectedLab={selectedLab} reservations={selectedDate === todayStr ? reservationsByDate.today.filter(r => r.lab_id === selectedLab) : reservationsByDate.tomorrow.filter(r => r.lab_id === selectedLab)} currentReservationCount={currentReservationCount} onCardClick={handleTimeSlotClick} />
+      <div className={`bottom-sheet ${isSheetExpanded ? "expanded" : ""}`}>
+        <div className="bottom-sheet-handle" onClick={() => setIsSheetExpanded(!isSheetExpanded)}></div>
+        <div className="bottom-sheet-content">
+          <div className="text-center mb-4">
+            <img src="/baf-logo.png" alt="BAF Logo" className="img-fluid" style={{ maxWidth: "120px" }} />
+          </div>
+          <div className="card p-3 my-3">
+            <h5 className="card-title mb-3">날짜 선택</h5>
+            <div className="row g-2">
+              <div className="col-6">
+                <button className={`btn w-100 fs-5 fw-bold ${selectedDate === todayStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(todayStr)}>11/11</button>
+              </div>
+              <div className="col-6">
+                <button className={`btn w-100 fs-5 fw-bold ${selectedDate === tomorrowStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(tomorrowStr)}>11/12</button>
+              </div>
+            </div>
+          </div>
+          <MyReservations studentId={studentId} reservationsByDate={reservationsByDate} currentReservationCount={currentReservationCount} onReservationClick={handleMyReservationClick} />
+          <div className="card p-3 my-3">
+            <h5 className="card-title mb-3">예약자 정보</h5>
+            <div className="row g-2 mb-2">
+              <div className="col-6">
+                <label className="form-label small">학번</label>
+                <input type="text" className="form-control" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="학번" />
+              </div>
+              <div className="col-6">
+                <label className="form-label small">이름</label>
+                <input type="text" className="form-control" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="이름" />
+              </div>
+            </div>
+            <div>
+              <label className="form-label small">인증번호</label>
+              <input type="password" className="form-control" value={authNumber} onChange={(e) => setAuthNumber(e.target.value)} placeholder="4자리" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  );
+
+  const renderDesktopView = () => renderMobileView(); // For now, let's use the same modern UI for desktop
 
   return (
-    <div className="container mt-4">
-      <header className="text-center p-4 mb-5 bg-light border-bottom">
-        <img
-          src="/baf-logo.png"
-          alt="BAF Logo"
-          className="img-fluid mb-3"
-          style={{ maxWidth: "200px" }}
-        />
-        <h1 className="h2">연구실 체험부스 예약 시스템 (2025)</h1>
+    <div className="container p-0 p-sm-4">
+      <header className="text-center p-3 mb-4 bg-light border-bottom d-none d-lg-block">
+        <img src="/baf-logo.png" alt="BAF Logo" className="img-fluid mb-3" style={{ maxWidth: "180px" }} />
+        <h1 className="h3">연구실 체험부스 예약 시스템 (2025)</h1>
       </header>
-
-      <main>
-        <StatusPanel
-          reservationsByDate={reservationsByDate}
-          selectedLab={selectedLab}
-          onLabSelect={setSelectedLab}
-          studentId={studentId}
-          currentReservationCount={currentReservationCount}
-        />
-
-        <div className="row g-4 mb-5">
-          <div className="col-12 col-lg-4">
-            <div className="card p-4 h-100 shadow-sm">
-              <h5 className="card-title mb-3">날짜 선택</h5>
-              <div className="d-grid gap-2">
-                <button
-                  className={`btn ${
-                    selectedDate === todayStr
-                      ? "btn-primary"
-                      : "btn-outline-primary"
-                  }`}
-                  onClick={() => handleDateChange(today)}
-                >
-                  11/11 (첫째날)
-                </button>
-                <button
-                  className={`btn ${
-                    selectedDate === tomorrowStr
-                      ? "btn-primary"
-                      : "btn-outline-primary"
-                  }`}
-                  onClick={() => handleDateChange(tomorrow)}
-                >
-                  11/12 (둘째날)
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="col-12 col-lg-8">
-            <div className="card p-4 h-100 shadow-sm">
-              <h5 className="card-title mb-3">예약자 정보</h5>
-              <div className="row g-3">
-                <div className="col-md-4">
-                  <label htmlFor="studentId" className="form-label small">
-                    학번
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="studentId"
-                    value={studentId}
-                    onChange={(e) => setStudentId(e.target.value)}
-                    placeholder="학번"
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label htmlFor="studentName" className="form-label small">
-                    이름
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="studentName"
-                    value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)}
-                    placeholder="이름"
-                  />
-                </div>
-                <div className="col-md-4">
-                  <label htmlFor="authNumber" className="form-label small">
-                    인증번호
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="authNumber"
-                    value={authNumber}
-                    onChange={(e) => setAuthNumber(e.target.value)}
-                    placeholder="4자리"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="alert alert-info mb-4">
-          <h6 className="alert-heading">시스템 사용법</h6>
-          <ul className="mb-0 small">
-            <li>
-              학번과 인증번호를 입력하고, 원하는 실험실과 날짜를 선택한 후
-              예약을 진행하세요.
-            </li>
-            <li>
-              <strong>예약 제한:</strong> 한 학번당 전체 기간 중 최대 2회까지
-              예약 가능합니다.
-            </li>
-            <li>
-              본인 예약은 <span className="text-success fw-bold">초록색</span>,
-              타인 예약은 <span className="text-warning fw-bold">노란색</span>,
-              예약 마감은 <span className="text-danger fw-bold">빨간색</span>,
-              예약 제한 도달은{" "}
-              <span className="text-secondary fw-bold">회색</span>으로
-              표시됩니다.
-            </li>
-          </ul>
-        </div>
-
-        <Timetable
-          studentId={studentId}
-          studentName={studentName}
-          authNumber={authNumber}
-          selectedLab={selectedLab}
-          selectedDate={selectedDate}
-          reservations={
-            selectedDate === todayStr
-              ? reservationsByDate.today.filter((r) => r.lab_id === selectedLab)
-              : reservationsByDate.tomorrow.filter(
-                  (r) => r.lab_id === selectedLab
-                )
-          }
-          currentReservationCount={currentReservationCount}
-          onReservationUpdate={fetchAllReservations}
-        />
-      </main>
+      {renderMobileView()} 
+      <ReservationModal show={showModal} onHide={() => setShowModal(false)} context={modalContext} loading={loading} onConfirm={handleConfirmReservation} onCancel={handleCancelReservation} />
       <ToastContainer
-        position="bottom-right"
-        autoClose={3000}
-        hideProgressBar={false}
+        position="bottom-center"
+        autoClose={2000}
+        hideProgressBar
         newestOnTop={false}
         closeOnClick
         rtl={false}
-        pauseOnFocusLoss
-        draggable
+        pauseOnFocusLoss={false}
+        draggable={false}
         pauseOnHover
+        theme="colored"
       />
     </div>
   );
 }
+
+const formatReservationDisplay = (reservation) => {
+  const id = reservation.student_id || "";
+  const name = reservation.student_name || "";
+  return `${id} ${name}`.trim();
+};
+
+const ReservationModal = ({ show, onHide, context, loading, onConfirm, onCancel }) => {
+  if (!context) return null;
+
+  const { type, timeSlot, lab, reservationsForSlot } = context;
+  const isMyReservation = type === 'cancel';
+  const isFull = !isMyReservation && reservationsForSlot && reservationsForSlot.length >= MAX_RESERVATIONS_PER_SLOT;
+
+  let title = `${lab} - ${timeSlot.split(' ')[0]}`;
+  let body = null;
+  let footer = null;
+
+  const bookedBy = (
+    reservationsForSlot && reservationsForSlot.length > 0 && (
+      <div className="mt-3">
+        <small className="text-muted">현재 예약자:</small>
+        <ul className="list-unstyled mt-1 small">
+          {reservationsForSlot.map(r => <li key={r.id}>- {formatReservationDisplay(r)}</li>)}
+        </ul>
+      </div>
+    )
+  );
+
+  if (isMyReservation) {
+    title = "예약 취소";
+    body = <p><strong>{lab} - {timeSlot.split(' ')[0]}</strong> 예약을 취소하시겠습니까?</p>;
+    footer = <><Button variant="secondary" onClick={onHide} disabled={loading}>닫기</Button><Button variant="danger" onClick={onCancel} disabled={loading}>{loading ? <Spinner size="sm" /> : "예약 취소"}</Button></>;
+  } else if (isFull) {
+    title = "예약 마감";
+    body = <><p>이 시간대는 예약이 모두 마감되었습니다.</p>{bookedBy}</>;
+    footer = <Button variant="secondary" onClick={onHide}>닫기</Button>;
+  } else {
+    title = "새 예약";
+    body = <><p><strong>{lab} - {timeSlot.split(' ')[0]}</strong>에 예약하시겠습니까?</p>{bookedBy}</>;
+    footer = <><Button variant="secondary" onClick={onHide} disabled={loading}>닫기</Button><Button variant="primary" onClick={onConfirm} disabled={loading}>{loading ? <Spinner size="sm" /> : "예약하기"}</Button></>;
+  }
+
+  return (
+    <Modal show={show} onHide={onHide} centered backdrop={loading ? "static" : true}>
+      <Modal.Header closeButton><Modal.Title as="h5">{title}</Modal.Title></Modal.Header>
+      <Modal.Body>{body}</Modal.Body>
+      <Modal.Footer>{footer}</Modal.Footer>
+    </Modal>
+  );
+};
 
 export default App;

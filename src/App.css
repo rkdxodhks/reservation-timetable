@@ -1,152 +1,234 @@
-/* App.css */
+/* =================================== */
+/*      Toss-Inspired Design System    */
+/* =================================== */
 
-/* Define custom properties for colors */
 :root {
-  --primary-accent-blue: #3A8DFF;
-  --text-dark: #333333;
-  --pastel-blue: #a7d9f7; /* Light blue for progress bar */
-  --pastel-gray: #c0c0c0; /* Light gray for progress bar */
-  --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for cards */
+  --primary-color: #1F4EF5;
+  --secondary-color: #64768c;
+  --text-color: #1A1E27;
+  --text-light-gray: #8a94a2;
+  --background-color: #f0f2f5;
+  --card-background-color: #ffffff;
+  --success-color: #34c759;
+  --danger-color: #ff3b30;
+  --global-border-radius: 0.75rem; /* Reduced from 1rem */
+  --card-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.07);
+  --card-hover-shadow: 0 6px 16px 0 rgba(0, 0, 0, 0.1);
 }
 
-/* General Body Styles */
 body {
-  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; /* Example font stack */
-  color: var(--text-dark);
-  font-size: 16px; /* Base font size */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  color: var(--text-color);
+  background-color: var(--background-color);
 }
 
-/* Header */
-h1 {
-  color: var(--text-dark); /* Change to dark text color */
-  font-weight: 600; /* Bolder title */
+/* Z-Index fix for Toastify */
+.Toastify__toast-container {
+  z-index: 9999 !important;
 }
 
-/* Main content padding */
-main {
-    padding-top: 1.5rem;
-}
-
-/* Card Styles (general) */
+/* General Card Styles */
 .card {
-  box-shadow: var(--card-shadow); /* Apply shadow to all cards */
-  border: 1px solid rgba(0, 0, 0, 0.05); /* Subtle border */
+  border-radius: var(--global-border-radius) !important;
+  border: none !important;
+  box-shadow: var(--card-shadow) !important;
+  background-color: var(--card-background-color) !important;
 }
 
-/* Spacing between sections */
-/* This targets the input/date card and status panel card */
-.card.p-3.mb-4.shadow-sm { 
-  margin-bottom: 2.5rem !important; /* Increase vertical spacing */
-}
-
-/* Clickable Card (StatusPanel) */
-.clickable-card {
-    cursor: pointer;
-    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.clickable-card:hover {
-    border-color: var(--primary-accent-blue);
-    box-shadow: 0 0 8px rgba(0, 123, 255, 0.7); /* Slightly stronger hover shadow */
-}
-
-.clickable-card.selected {
-    border-color: var(--primary-accent-blue);
-    border-width: 2px;
-    box-shadow: 0 0 10px rgba(0, 123, 255, 0.9); /* Stronger selected shadow */
-}
-
-/* Badge Container (Progress Bar) */
-.badge-container {
-  padding: .5em .6em;
-  border-radius: .25rem;
-  overflow: hidden;
-  position: relative; /* Ensure positioning context for progress bar */
-  background-color: rgba(0, 0, 0, 0.05); /* Light background for the container */
-}
-
-.badge-container .progress-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  transition: width .6s ease;
-  z-index: 0;
-}
-
-.badge-container span {
-  z-index: 1;
-  font-weight: 600; /* Make text bolder */
-  color: var(--text-dark); /* Ensure dark text color */
-}
-
-/* Pastel Colors for Progress Bars */
-.bg-pastel-blue {
-  background-color: var(--pastel-blue);
-}
-
-.bg-pastel-gray {
-  background-color: var(--pastel-gray);
-}
-
-/* Bootstrap Button Overrides for Hover */
+/* Button Styles (Toss-like) */
 .btn {
-  transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  border-radius: var(--global-border-radius) !important;
+  font-weight: 600 !important;
+  padding: 0.85rem 1rem !important;
+  transition: all 0.2s ease-in-out !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .btn-primary {
-  background-color: var(--primary-accent-blue);
-  border-color: var(--primary-accent-blue);
+  background-color: var(--primary-color) !important;
+  color: white !important;
 }
 
 .btn-primary:hover {
-  background-color: #2a70d8; /* Slightly darker blue on hover */
-  border-color: #2a70d8;
+  filter: brightness(110%);
+  transform: translateY(-1px);
 }
 
 .btn-outline-primary {
-  color: var(--primary-accent-blue);
-  border-color: var(--primary-accent-blue);
+  color: var(--primary-color) !important;
+  background-color: rgba(31, 78, 245, 0.1) !important; /* Light blue background */
+  border: none !important;
 }
 
 .btn-outline-primary:hover {
-  background-color: var(--primary-accent-blue);
-  color: #fff;
+  background-color: rgba(31, 78, 245, 0.15) !important;
 }
 
-/* Timetable Card Status Visualization */
-.card.bg-success { /* My reservation */
-  background-color: #e6ffe6 !important; /* Very light green */
-  border: 1px solid #4CAF50; /* Green border */
-  color: var(--text-dark) !important;
+.btn-danger {
+  background-color: var(--danger-color) !important;
+  color: white !important;
 }
 
-.card.bg-danger { /* Full */
-  background-color: #ffcdd2 !important; /* Pastel Red background */
-  border: 1px solid #ef9a9a; /* Slightly darker pastel red border */
-  color: var(--text-dark) !important; /* Dark text for better contrast */
+.btn-secondary {
+    background-color: var(--secondary-color) !important;
+    color: white !important;
 }
 
-.card.bg-warning { /* Partially reserved */
-  background-color: #fff8e1 !important; /* Very light yellow */
-  border: 1px solid #FFC107; /* Yellow border */
-  color: var(--text-dark) !important;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    color: var(--text-color);
+}
+.card-title {
+    font-weight: 600;
+}
+.form-label {
+    font-weight: 500;
+    color: var(--text-light-gray);
 }
 
-.card.bg-light { /* Available */
-  background-color: #ffffff !important; /* White background */
-  border: 1px solid var(--primary-accent-blue); /* Blue border */
-  color: var(--text-dark) !important;
+/* Timetable Card Styles */
+.timetable-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.timetable-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--card-hover-shadow) !important;
 }
 
-/* Typography for time slot cards */
-.card-body h5.card-title { /* Time slot text */
-  font-size: 1.25rem; /* Larger font size */
-  font-weight: 600; /* Bolder */
-  color: var(--text-dark);
+.timetable-card.available {
+  background-color: var(--card-background-color) !important;
+  border: 1px solid #e5e7eb !important;
 }
 
-.card-body p.card-text { /* Student IDs and count */
-  font-size: 0.9rem;
-  color: #555; /* Slightly lighter than main text */
+.timetable-card.partially {
+  background-color: #fffbeb !important;
+  border: 1px solid #fde68a !important;
+}
+
+.timetable-card.full {
+  background-color: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  color: var(--text-light-gray) !important;
+  text-decoration: line-through;
+}
+
+.timetable-card.mine {
+  background-color: #ecfdf5 !important;
+  border: 2px solid var(--success-color) !important;
+}
+
+.timetable-card.disabled {
+    background-color: #f3f4f6 !important;
+    color: #9ca3af !important;
+    cursor: not-allowed !important;
+    text-decoration: none !important;
+}
+
+/* Pill Filter Styles */
+.pill-filter-container {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 0.5rem;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.pill-filter-container::-webkit-scrollbar {
+  display: none;
+}
+
+.pill-filter {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  margin-right: 0.5rem;
+  border: none;
+  border-radius: 2rem;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  font-weight: 600;
+  background-color: #e5e7eb;
+  color: #4b5563;
+}
+
+.pill-filter.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* =================================== */
+/*      UI Polish: Modal & Toast       */
+/* =================================== */
+
+/* Toss-style Modal */
+.modal-content {
+  border-radius: var(--global-border-radius) !important;
+  border: none !important;
+  box-shadow: var(--card-shadow) !important;
+}
+
+.modal-header {
+  border-bottom: none !important;
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem !important;
+}
+
+.modal-header .modal-title {
+    font-weight: 700;
+}
+
+.modal-body {
+    padding: 0.5rem 1.5rem 1.5rem 1.5rem !important;
+    font-size: 1.1rem;
+}
+
+.modal-footer {
+  border-top: none !important;
+  padding: 0 1.5rem 1.5rem 1.5rem !important;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.modal-footer .btn {
+    flex: 1;
+}
+
+/* Toss-style Toast */
+.Toastify__toast {
+    border-radius: var(--global-border-radius) !important;
+    box-shadow: var(--card-shadow) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-weight: 500;
+    padding: 1rem 1.5rem !important;
+}
+
+.Toastify__toast--success {
+    background: var(--success-color) !important;
+    color: white !important;
+}
+
+.Toastify__toast--error {
+    background: var(--danger-color) !important;
+    color: white !important;
+}
+
+.Toastify__toast--warning {
+    background: var(--warning-color) !important;
+    color: white !important;
+}
+
+.Toastify__icon-container {
+    color: white !important;
+}
+
+.Toastify__progress-bar {
+    background: rgba(255, 255, 255, 0.7) !important;
+}
+
+/* Lab Filter Header */
+.lab-filter-header {
+  padding: 1rem 1rem 0.5rem 1rem;
+  background-color: var(--background-color);
+  border-bottom: 1px solid #e5e7eb;
 }
