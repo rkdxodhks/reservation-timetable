@@ -76,6 +76,7 @@ const Timetable = ({
       const reservationData = {
         time_slot: selectedTimeSlot,
         student_id: studentId,
+        student_name: studentName,
         auth_number: authNumber,
         date: selectedDate,
         lab_id: selectedLab,
@@ -333,7 +334,8 @@ const Timetable = ({
 
   const formatReservationDisplay = (reservation) => {
     const id = reservation.student_id || "";
-    return id;
+    const name = reservation.student_name || "";
+    return `${id} ${name}`.trim();
   };
 
   return (
