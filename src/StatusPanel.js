@@ -23,10 +23,8 @@ export const MyReservations = ({
   reservationsByDate,
   currentReservationCount,
   onReservationClick, // New prop
+  todayStr,
 }) => {
-  const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-
   const myReservations =
     studentId && reservationsByDate
       ? [...reservationsByDate.today, ...reservationsByDate.tomorrow].filter(

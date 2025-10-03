@@ -5,9 +5,9 @@ import { LABS, MAX_RESERVATIONS_PER_SLOT } from "./constants";
 import { supabase } from "./supabaseClient";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
-import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { Modal, Button, Spinner } from "react-bootstrap";
+import { ToastContainer, toast, Slide } from "react-toastify";
+import { useSwipeable } from "react-swipeable";
 
 // Main App Component
 function App() {
@@ -27,11 +27,8 @@ function App() {
   const [modalContext, setModalContext] = useState(null);
 
   const channelRef = useRef(null);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const todayStr = today.toISOString().split("T")[0];
-  const tomorrowStr = tomorrow.toISOString().split("T")[0];
+  const todayStr = "2025-11-11";
+  const tomorrowStr = "2025-11-12";
 
   useEffect(() => {
     setSelectedDate(todayStr);
@@ -135,14 +132,33 @@ function App() {
     }
   };
 
+  const handleDateToggle = () => {
+    setSelectedDate(currentDate => (currentDate === todayStr ? tomorrowStr : todayStr));
+  };
+
+  const formatDate = (dateStr) => dateStr ? dateStr.substring(5).replace("-", "/") : "";
+
+  const swipeHandlers = useSwipeable({
+    onSwipedLeft: () => setSelectedDate(tomorrowStr),
+    onSwipedRight: () => setSelectedDate(todayStr),
+    preventScrollOnSwipe: true,
+    trackMouse: true
+  });
+
   return (
     <div className="container p-0 p-sm-4">
       <main>
         <div className="lab-filter-header">
           <LabsList selectedLab={selectedLab} onLabSelect={setSelectedLab} />
         </div>
-        <Timetable studentId={studentId} selectedLab={selectedLab} reservations={selectedDate === todayStr ? reservationsByDate.today.filter(r => r.lab_id === selectedLab) : reservationsByDate.tomorrow.filter(r => r.lab_id === selectedLab)} currentReservationCount={currentReservationCount} onCardClick={handleTimeSlotClick} />
+        <div {...swipeHandlers}>
+          <Timetable key={selectedDate} studentId={studentId} selectedLab={selectedLab} reservations={selectedDate === todayStr ? reservationsByDate.today.filter(r => r.lab_id === selectedLab) : reservationsByDate.tomorrow.filter(r => r.lab_id === selectedLab)} currentReservationCount={currentReservationCount} onCardClick={handleTimeSlotClick} />
+        </div>
         
+        <button className="fab-left" onClick={handleDateToggle}>
+          <span className="fab-date">{formatDate(selectedDate)}</span>
+        </button>
+
         <button className="fab" onClick={() => setShowInfoModal(true)}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
         </button>
@@ -150,12 +166,12 @@ function App() {
         <InfoModal 
           show={showInfoModal} 
           onHide={() => setShowInfoModal(false)}
-          {...{ studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, selectedDate, setSelectedDate, todayStr, tomorrowStr, reservationsByDate, currentReservationCount, handleMyReservationClick }}
+          {...{ studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, reservationsByDate, currentReservationCount, handleMyReservationClick, todayStr }}
         />
 
         <ReservationModal show={showReservationModal} onHide={() => setShowReservationModal(false)} context={modalContext} loading={loading} onConfirm={handleConfirmReservation} onCancel={handleCancelReservation} dialogClassName="info-modal" />
         
-        <ToastContainer position="bottom-center" autoClose={2000} hideProgressBar newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss={false} draggable={false} pauseOnHover theme="colored" />
+        <ToastContainer position="bottom-center" autoClose={2000} hideProgressBar newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss={false} draggable={false} pauseOnHover theme="colored" transition={Slide} />
       </main>
     </div>
   );
@@ -163,31 +179,24 @@ function App() {
 
 // Helper: Info Modal
 const InfoModal = (props) => {
-  const { show, onHide, studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, selectedDate, setSelectedDate, todayStr, tomorrowStr, reservationsByDate, currentReservationCount, handleMyReservationClick } = props;
+  const { show, onHide, studentId, setStudentId, studentName, setStudentName, authNumber, setAuthNumber, reservationsByDate, currentReservationCount, handleMyReservationClick, todayStr } = props;
   return (
     <Modal show={show} onHide={onHide} centered scrollable dialogClassName="info-modal">
       <Modal.Header closeButton>
         <Modal.Title as="h5">정보 및 설정</Modal.Title>
       </Modal.Header>
       <Modal.Body>
-        <div className="text-center mb-4">
+        <div className="text-center mb-3">
           <img src="/baf-logo.png" alt="BAF Logo" className="img-fluid" style={{ maxWidth: "120px" }} />
         </div>
-        <div className="card p-3 my-3">
-          <h5 className="card-title mb-3">날짜 선택</h5>
-          <div className="row g-2">
-            <div className="col-6"><button className={`btn w-100 fs-5 fw-bold ${selectedDate === todayStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(todayStr)}>11/11</button></div>
-            <div className="col-6"><button className={`btn w-100 fs-5 fw-bold ${selectedDate === tomorrowStr ? "btn-primary" : "btn-outline-primary"}`} onClick={() => setSelectedDate(tomorrowStr)}>11/12</button></div>
-          </div>
-        </div>
-        <MyReservations studentId={studentId} reservationsByDate={reservationsByDate} currentReservationCount={currentReservationCount} onReservationClick={handleMyReservationClick} />
-        <div className="card p-3 my-3">
-          <h5 className="card-title mb-3">예약자 정보</h5>
+        <MyReservations studentId={studentId} reservationsByDate={reservationsByDate} currentReservationCount={currentReservationCount} onReservationClick={handleMyReservationClick} todayStr={todayStr} />
+        <div className="card p-2 my-2">
+          <h5 className="card-title mb-2">예약자 정보</h5>
           <div className="row g-2 mb-2">
-            <div className="col-6"><label className="form-label small">학번</label><input type="text" className="form-control" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="학번" /></div>
+            <div className="col-6"><label className="form-label small">학번</label><input type="text" inputMode="numeric" className="form-control" value={studentId} onChange={(e) => setStudentId(e.target.value)} placeholder="학번" /></div>
             <div className="col-6"><label className="form-label small">이름</label><input type="text" className="form-control" value={studentName} onChange={(e) => setStudentName(e.target.value)} placeholder="이름" /></div>
           </div>
-          <div><label className="form-label small">인증번호</label><input type="password" className="form-control" value={authNumber} onChange={(e) => setAuthNumber(e.target.value)} placeholder="4자리" /></div>
+          <div><label className="form-label small">인증번호</label><input type="password" inputMode="numeric" pattern="[0-9]*" className="form-control" value={authNumber} onChange={(e) => setAuthNumber(e.target.value)} placeholder="4자리" /></div>
         </div>
       </Modal.Body>
       <Modal.Footer>

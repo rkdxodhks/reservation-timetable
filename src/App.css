@@ -3,6 +3,7 @@
 /* =================================== */
 
 :root {
+  --toastify-transition-duration: 500ms;
   --primary-color: #1F4EF5;
   --secondary-color: #64768c;
   --text-color: #1A1E27;
@@ -170,9 +171,15 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--modal-shadow) !important;
 }
 
+/* Custom Modal Backdrop with Blur */
+.modal-backdrop {
+  backdrop-filter: blur(4px);
+  background-color: rgba(240, 242, 245, 0.6) !important;
+}
+
 .modal-header {
   border-bottom: none !important;
-  padding: 1.5rem 1.5rem 0.5rem 1.5rem !important;
+  padding: 1rem 1rem 0.5rem 1rem !important;
 }
 
 .modal-header .modal-title {
@@ -180,13 +187,13 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .modal-body {
-    padding: 1.5rem !important;
+    padding: 1rem !important;
     font-size: 1rem;
 }
 
 .modal-footer {
   border-top: none !important;
-  padding: 0 1.5rem 1.5rem 1.5rem !important;
+  padding: 0 1rem 1rem 1rem !important;
   display: flex;
   gap: 0.5rem;
 }
@@ -257,6 +264,43 @@ h1, h2, h3, h4, h5, h6 {
 .fab:hover {
   transform: scale(1.05);
   filter: brightness(110%);
+}
+
+.fab-left {
+  position: fixed;
+  bottom: 2rem;
+  left: 2rem;
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  border: none;
+  z-index: 1040;
+  transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  text-align: center;
+}
+
+.fab-left:hover {
+  transform: scale(1.05);
+  filter: brightness(110%);
+}
+
+.fab-left:active {
+  transform: scale(0.95);
+  filter: brightness(90%);
+}
+
+.fab-left .fab-date {
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1;
 }
 
 /* Custom Modal Sizing */
