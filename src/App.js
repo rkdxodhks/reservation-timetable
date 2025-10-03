@@ -160,7 +160,7 @@ function App() {
         </button>
 
         <button className="fab" onClick={() => setShowInfoModal(true)}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
         </button>
 
         <InfoModal 
