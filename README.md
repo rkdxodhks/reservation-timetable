@@ -117,3 +117,52 @@ REACT_APP_SUPABASE_ANON_KEY=your-anon-key
 - **연결 오류**: Supabase URL과 키가 올바른지 확인하세요.
 - **실시간 업데이트 안됨**: Realtime 기능이 활성화되어 있는지 확인하세요.
 - **예약 실패**: 학번과 인증번호 형식이 올바른지 확인하세요.
+
+## 🔄 Supabase 비활성화 방지 (GitHub PING)
+
+Supabase의 무료 플랜은 비활성 상태가 지속되면 프로젝트가 일시 중단될 수 있습니다. 이를 방지하기 위해 GitHub Actions를 사용하여 정기적으로 Supabase에 ping을 보낼 수 있습니다.
+
+### GitHub PING 설정 방법
+
+#### 1. GitHub Secrets 설정
+
+GitHub 저장소의 `Settings` > `Secrets and variables` > `Actions`에서 다음 secrets를 추가하세요:
+
+```
+REACT_APP_SUPABASE_URL=https://your-project-ref.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+```
+
+#### 2. GitHub Actions 워크플로우
+
+프로젝트에 이미 `.github/workflows/ping-supabase.yml` 파일이 포함되어 있습니다. 이 워크플로우는:
+
+- **자동 실행**: 매일 오전 9시 (UTC)에 실행
+- **수동 실행**: 필요시 GitHub Actions 탭에서 수동 실행 가능
+- **헬스체크**: Supabase REST API 엔드포인트에 ping 전송
+- **로그 기록**: 실행 시간과 결과를 로그로 기록
+
+#### 3. 워크플로우 활성화
+
+1. GitHub 저장소의 `Actions` 탭으로 이동
+2. `Ping Supabase to Prevent Inactivity` 워크플로우 클릭
+3. `Enable workflow` 버튼 클릭하여 활성화
+
+#### 4. 실행 확인
+
+- 워크플로우가 정상적으로 실행되는지 확인
+- `Actions` 탭에서 실행 로그 확인
+- 실패 시 secrets 설정을 다시 확인
+
+### PING의 효과
+
+- **비활성화 방지**: 정기적인 ping으로 Supabase 프로젝트 활성 상태 유지
+- **자동화**: 수동 개입 없이 자동으로 실행
+- **비용 절약**: 무료 플랜에서 프로젝트 중단 방지
+- **안정성**: 예약 시스템의 지속적인 가용성 보장
+
+### 주의사항
+
+- GitHub Actions는 월 2,000분까지 무료입니다.
+- 매일 한 번 실행하므로 월 약 30분 정도 사용합니다.
+- Supabase URL과 키가 올바르게 설정되어 있어야 합니다.

@@ -1,0 +1,41 @@
+name: Ping Supabase to Prevent Inactivity
+
+on:
+  schedule:
+    # 매일 오전 9시 (UTC)에 실행
+    - cron: '0 9 * * *'
+  workflow_dispatch: # 수동 실행 가능
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Supabase
+        run: |
+          echo "Pinging Supabase to prevent inactivity..."
+          
+          # Supabase URL에서 프로젝트 ID 추출
+          SUPABASE_URL="${{ secrets.REACT_APP_SUPABASE_URL }}"
+          
+          if [ -z "$SUPABASE_URL" ]; then
+            echo "❌ REACT_APP_SUPABASE_URL secret이 설정되지 않았습니다."
+            exit 1
+          fi
+          
+          # Supabase 프로젝트 헬스체크 엔드포인트 호출
+          curl -f -s -o /dev/null "$SUPABASE_URL/rest/v1/" \
+            -H "apikey: ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.REACT_APP_SUPABASE_ANON_KEY }}"
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ Supabase ping 성공!"
+          else
+            echo "❌ Supabase ping 실패!"
+            exit 1
+          fi
+          
+      - name: Log timestamp
+        run: |
+          echo "Ping executed at: $(date)"
+          echo "Next scheduled run: Tomorrow at 9:00 AM UTC"
