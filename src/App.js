@@ -15,6 +15,21 @@ import {
 import { ToastContainer, toast, Slide } from "react-toastify";
 import { useSwipeable } from "react-swipeable";
 
+// 관리자 모드 체크 함수
+function checkAdminMode(studentId, authNumber, setIsAdminMode, setStudentName) {
+  const isAdmin = studentId === "admin" && authNumber === "202345603";
+  setIsAdminMode(isAdmin);
+  
+  if (isAdmin) {
+    setStudentName("관리자");
+    toast.success("관리자 모드가 활성화되었습니다", {
+      position: "top-center",
+      autoClose: 2000,
+      hideProgressBar: true,
+    });
+  }
+}
+
 // Main App Component
 function App() {
   // Global State
@@ -42,21 +57,6 @@ function App() {
   const channelRef = useRef(null);
   const todayStr = "2025-11-11";
   const tomorrowStr = "2025-11-12";
-
-  // 관리자 모드 체크 함수
-  function checkAdminMode() {
-    const isAdmin = studentId === "admin" && authNumber === "202345603";
-    setIsAdminMode(isAdmin);
-    
-    if (isAdmin) {
-      setStudentName("관리자");
-      toast.success("관리자 모드가 활성화되었습니다", {
-        position: "top-center",
-        autoClose: 2000,
-        hideProgressBar: true,
-      });
-    }
-  }
 
   useEffect(() => {
     setSelectedDate(todayStr);
@@ -541,7 +541,7 @@ const InfoModal = (props) => {
                       setStudentId(e.target.value);
                       validateField("studentId", e.target.value);
                       // 관리자 모드 체크
-                      setTimeout(() => checkAdminMode(), 100);
+                      setTimeout(() => checkAdminMode(studentId, authNumber, setIsAdminMode, setStudentName), 100);
                     }}
                     placeholder="학번 (admin 입력 가능)"
                   />
@@ -598,7 +598,7 @@ const InfoModal = (props) => {
                     setAuthNumber(e.target.value);
                     validateField("authNumber", e.target.value);
                     // 관리자 모드 체크
-                    setTimeout(() => checkAdminMode(), 100);
+                    setTimeout(() => checkAdminMode(studentId, authNumber, setIsAdminMode, setStudentName), 100);
                   }}
                   placeholder="4자리"
                 />
