@@ -42,3 +42,78 @@ npm start
 ```
 
 브라우저에서 `http://localhost:3000` 주소로 접속하여 시스템을 확인할 수 있습니다.
+
+## ⚠️ Supabase 설정 유의사항
+
+### 데이터베이스 테이블 구조
+
+이 프로젝트를 실행하기 전에 Supabase에서 다음 테이블을 생성해야 합니다:
+
+#### 1. `reservations` 테이블 생성
+
+```sql
+CREATE TABLE reservations (
+  id SERIAL PRIMARY KEY,
+  student_id VARCHAR(9) NOT NULL,
+  student_name VARCHAR(50) NOT NULL,
+  auth_number VARCHAR(6) NOT NULL,
+  lab_name VARCHAR(100) NOT NULL,
+  time_slot VARCHAR(20) NOT NULL,
+  reservation_date DATE NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+```
+
+#### 2. Row Level Security (RLS) 설정
+
+```sql
+-- RLS 활성화
+ALTER TABLE reservations ENABLE ROW LEVEL SECURITY;
+
+-- 모든 사용자가 읽기 가능
+CREATE POLICY "Allow read access for all users" ON reservations
+  FOR SELECT USING (true);
+
+-- 모든 사용자가 삽입 가능
+CREATE POLICY "Allow insert for all users" ON reservations
+  FOR INSERT WITH CHECK (true);
+
+-- 모든 사용자가 삭제 가능 (자신의 예약만)
+CREATE POLICY "Allow delete for own reservations" ON reservations
+  FOR DELETE USING (true);
+```
+
+#### 3. Realtime 기능 활성화
+
+Supabase 대시보드에서 다음 설정을 확인하세요:
+
+1. **Database** > **Replication** 메뉴로 이동
+2. `reservations` 테이블의 Realtime 기능을 활성화
+3. 또는 SQL로 실행:
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE reservations;
+```
+
+### 환경 변수 설정
+
+`.env` 파일에 다음 변수들을 설정해야 합니다:
+
+```env
+REACT_APP_SUPABASE_URL=https://your-project-ref.supabase.co
+REACT_APP_SUPABASE_ANON_KEY=your-anon-key
+```
+
+### 중요 주의사항
+
+1. **학번 형식**: 학번은 9자리 숫자로 입력되어야 합니다.
+2. **인증번호**: 6자리 숫자로 입력되어야 합니다.
+3. **예약 제한**: 한 학번당 최대 2회까지만 예약 가능합니다.
+4. **실시간 동기화**: 여러 사용자가 동시에 예약할 때 실시간으로 상태가 업데이트됩니다.
+5. **데이터 무결성**: 중복 예약 방지를 위해 클라이언트와 서버 양쪽에서 검증이 이루어집니다.
+
+### 문제 해결
+
+- **연결 오류**: Supabase URL과 키가 올바른지 확인하세요.
+- **실시간 업데이트 안됨**: Realtime 기능이 활성화되어 있는지 확인하세요.
+- **예약 실패**: 학번과 인증번호 형식이 올바른지 확인하세요.

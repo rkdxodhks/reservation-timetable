@@ -270,6 +270,9 @@ function App() {
           delete errors.authNumber;
         }
         break;
+      default:
+        // 알 수 없는 필드에 대한 기본 처리
+        break;
     }
 
     setValidationErrors(errors);
