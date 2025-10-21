@@ -155,6 +155,354 @@ h6 {
   color: #6b7280;
 }
 
+/* App Header Styles */
+.app-header {
+  padding: 1.5rem 1rem 1rem 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.header-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-icon {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.header-title {
+  font-size: 2.25rem;
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+  color: var(--text-dark-gray);
+  letter-spacing: 0.02em;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  margin: 0;
+  color: var(--text-light-gray);
+  font-weight: 500;
+}
+
+/* Usage Guide Styles */
+.usage-guide {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.guide-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.guide-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.guide-icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.guide-text {
+  font-size: 0.875rem;
+  color: var(--text-dark-gray);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.guide-divider {
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+/* 반응형 사용법 가이드 */
+@media (max-width: 768px) {
+  .guide-divider {
+    display: none;
+  }
+
+  .guide-content {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .guide-item {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .usage-guide {
+    padding: 0.875rem 1rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .guide-icon {
+    font-size: 1.125rem;
+  }
+
+  .guide-text {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .usage-guide {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .guide-icon {
+    font-size: 1rem;
+  }
+
+  .guide-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* 반응형 헤더 */
+@media (max-width: 576px) {
+  .app-header {
+    padding: 1rem 1rem 0.75rem 1rem;
+  }
+
+  .logo-icon {
+    font-size: 2.5rem;
+  }
+
+  .header-title {
+    font-size: 1.75rem;
+  }
+
+  .header-subtitle {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+  }
+
+  .logo-icon {
+    font-size: 2rem;
+  }
+
+  .header-title {
+    font-size: 1.5rem;
+  }
+
+  .header-subtitle {
+    font-size: 0.9rem;
+  }
+}
+
+/* 관리자 모드 스타일 */
+.admin-mode {
+  background: linear-gradient(135deg, #f8faff 0%, #e8f2ff 50%, #f0f7ff 100%);
+  min-height: 100vh;
+  position: relative;
+  backdrop-filter: blur(10px);
+}
+
+.admin-mode::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+      circle at 20% 80%,
+      rgba(31, 78, 245, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(31, 78, 245, 0.08) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 40% 40%,
+      rgba(31, 78, 245, 0.05) 0%,
+      transparent 50%
+    );
+  pointer-events: none;
+  z-index: -1;
+}
+
+.admin-mode-indicator {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(31, 78, 245, 0.95) 0%,
+    rgba(26, 61, 191, 0.95) 50%,
+    rgba(20, 50, 160, 0.95) 100%
+  );
+  backdrop-filter: blur(20px);
+  color: white;
+  padding: 1rem 1.5rem;
+  box-shadow: 0 -4px 20px rgba(31, 78, 245, 0.3), 0 -1px 3px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  z-index: 1000;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.admin-indicator-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.admin-icon {
+  font-size: 1.5rem;
+  animation: adminGlow 3s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+}
+
+.admin-text {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+.admin-text::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    transparent 100%
+  );
+  animation: adminShimmer 2s ease-in-out infinite;
+}
+
+@keyframes adminGlow {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
+  }
+  50% {
+    transform: scale(1.1) rotate(5deg);
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.8));
+  }
+}
+
+@keyframes adminShimmer {
+  0% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* 관리자 모드일 때 메인 콘텐츠 하단 여백 추가 */
+.admin-mode main {
+  padding-bottom: 5rem;
+}
+
+/* 관리자 모드 카드 강조 */
+.admin-mode .timetable-card {
+  border: 2px solid rgba(31, 78, 245, 0.2);
+  box-shadow: 0 2px 8px rgba(31, 78, 245, 0.1);
+}
+
+.admin-mode .timetable-card:hover {
+  border-color: rgba(31, 78, 245, 0.4);
+  box-shadow: 0 4px 16px rgba(31, 78, 245, 0.2);
+  transform: translateY(-2px);
+}
+
+/* 반응형 관리자 모드 */
+@media (max-width: 768px) {
+  .admin-mode-indicator {
+    padding: 0.875rem 1rem;
+  }
+
+  .admin-icon {
+    font-size: 1.375rem;
+  }
+
+  .admin-text {
+    font-size: 0.9rem;
+  }
+
+  .admin-mode main {
+    padding-bottom: 4.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-mode-indicator {
+    padding: 0.75rem 0.875rem;
+  }
+
+  .admin-icon {
+    font-size: 1.25rem;
+  }
+
+  .admin-text {
+    font-size: 0.8rem;
+  }
+
+  .admin-mode main {
+    padding-bottom: 4rem;
+  }
+}
+
 /* Pill Filter Styles */
 .pill-filter-container {
   display: flex;

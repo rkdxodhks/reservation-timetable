@@ -101,7 +101,9 @@ const Timetable = ({
               >
                 <div className="card-body p-3">
                   <div className="d-flex justify-content-between align-items-center mb-2">
-                    <h5 className="card-title mb-0">{timeSlot.split(" ")[0]}</h5>
+                    <h5 className="card-title mb-0">
+                      {timeSlot.split(" ")[0]}
+                    </h5>
                     {renderStatusIcons(reservationsForSlot)}
                   </div>
                   {isAdminMode && reservationsForSlot.length > 0 && (
@@ -112,7 +114,9 @@ const Timetable = ({
                           <span className="badge bg-secondary me-1">
                             {reservation.student_id}
                           </span>
-                          <span className="small">{reservation.student_name}</span>
+                          <span className="small">
+                            {reservation.student_name}
+                          </span>
                         </div>
                       ))}
                     </div>

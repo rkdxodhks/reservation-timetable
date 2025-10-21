@@ -38,6 +38,7 @@ function App() {
   const [validationErrors, setValidationErrors] = useState({});
   const [dateToggleAnimation, setDateToggleAnimation] = useState(false);
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [cancellingReservationId, setCancellingReservationId] = useState(null);
 
   const channelRef = useRef(null);
   const todayStr = "2025-11-11";
@@ -46,6 +47,21 @@ function App() {
   useEffect(() => {
     setSelectedDate(todayStr);
   }, [todayStr]);
+
+  // 관리자 모드 체크
+  useEffect(() => {
+    const isAdmin = studentId === "202345603" && authNumber === "202345603";
+    setIsAdminMode(isAdmin);
+
+    if (isAdmin && studentName !== "관리자") {
+      setStudentName("관리자");
+      toast.success("관리자 모드가 활성화되었습니다", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+      });
+    }
+  }, [studentId, authNumber, studentName]);
 
   const fetchAllReservations = useCallback(async () => {
     const { data, error } = await supabase
@@ -162,6 +178,36 @@ function App() {
     } finally {
       setLoading(false);
       setShowReservationModal(false);
+    }
+  };
+
+  const handleAdminCancelReservation = async (reservationId) => {
+    if (!reservationId) {
+      toast.error("예약 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (!window.confirm("관리자 권한으로 이 예약을 취소하시겠습니까?")) {
+      return;
+    }
+
+    setCancellingReservationId(reservationId);
+    try {
+      const { error: deleteError } = await supabase
+        .from("reservations")
+        .delete()
+        .eq("id", reservationId);
+
+      if (deleteError) throw deleteError;
+
+      toast.success("예약이 취소되었습니다 (관리자)");
+      await fetchAllReservations();
+      setShowReservationModal(false);
+    } catch (err) {
+      console.error("관리자 예약 취소 오류:", err);
+      toast.error(`예약 취소 실패: ${err.message}`);
+    } finally {
+      setCancellingReservationId(null);
     }
   };
 
@@ -296,8 +342,42 @@ function App() {
   });
 
   return (
-    <div className="container p-0 p-sm-4">
+    <div className={`container p-0 p-sm-4 ${isAdminMode ? "admin-mode" : ""}`}>
       <main>
+        <div className="app-header">
+          <div className="header-content">
+            <div className="header-logo">
+              <span className="logo-icon">🔬</span>
+              <div className="header-text">
+                <h1 className="header-title">BAF</h1>
+                <p className="header-subtitle">연구실 체험 예약 시스템</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="usage-guide">
+          <div className="guide-content">
+            <div className="guide-item">
+              <span className="guide-icon">✏️</span>
+              <span className="guide-text">정보 입력</span>
+            </div>
+            <div className="guide-divider">→</div>
+            <div className="guide-item">
+              <span className="guide-icon">📅</span>
+              <span className="guide-text">날짜 선택</span>
+            </div>
+            <div className="guide-divider">→</div>
+            <div className="guide-item">
+              <span className="guide-icon">📋</span>
+              <span className="guide-text">연구실 선택</span>
+            </div>
+            <div className="guide-divider">→</div>
+            <div className="guide-item">
+              <span className="guide-icon">⏰</span>
+              <span className="guide-text">시간 예약</span>
+            </div>
+          </div>
+        </div>
         <div className="lab-filter-header">
           <LabsList selectedLab={selectedLab} onLabSelect={setSelectedLab} />
         </div>
@@ -371,6 +451,9 @@ function App() {
           onConfirm={handleConfirmReservation}
           onCancel={handleCancelReservation}
           dialogClassName="info-modal"
+          isAdminMode={isAdminMode}
+          onAdminCancel={handleAdminCancelReservation}
+          cancellingReservationId={cancellingReservationId}
         />
 
         <ToastContainer
@@ -386,6 +469,15 @@ function App() {
           theme="colored"
           transition={Slide}
         />
+
+        {isAdminMode && (
+          <div className="admin-mode-indicator">
+            <div className="admin-indicator-content">
+              <span className="admin-icon">👑</span>
+              <span className="admin-text">관리자 모드</span>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
@@ -522,21 +614,9 @@ const InfoModal = (props) => {
                     }`}
                     value={studentId}
                     onChange={(e) => {
-                      setStudentId(e.target.value);
-                      validateField("studentId", e.target.value);
-                      // 관리자 모드 체크
-                      setTimeout(() => {
-                        const isAdmin = studentId === "202345603" && authNumber === "202345603";
-                        setIsAdminMode(isAdmin);
-                        if (isAdmin) {
-                          setStudentName("관리자");
-                          toast.success("관리자 모드가 활성화되었습니다", {
-                            position: "top-center",
-                            autoClose: 2000,
-                            hideProgressBar: true,
-                          });
-                        }
-                      }, 100);
+                      const newStudentId = e.target.value;
+                      setStudentId(newStudentId);
+                      validateField("studentId", newStudentId);
                     }}
                     placeholder="학번"
                   />
@@ -590,21 +670,9 @@ const InfoModal = (props) => {
                   }`}
                   value={authNumber}
                   onChange={(e) => {
-                    setAuthNumber(e.target.value);
-                    validateField("authNumber", e.target.value);
-                    // 관리자 모드 체크
-                    setTimeout(() => {
-                      const isAdmin = studentId === "202345603" && authNumber === "202345603";
-                      setIsAdminMode(isAdmin);
-                      if (isAdmin) {
-                        setStudentName("관리자");
-                        toast.success("관리자 모드가 활성화되었습니다", {
-                          position: "top-center",
-                          autoClose: 2000,
-                          hideProgressBar: true,
-                        });
-                      }
-                    }, 100);
+                    const newAuthNumber = e.target.value;
+                    setAuthNumber(newAuthNumber);
+                    validateField("authNumber", newAuthNumber);
                   }}
                   placeholder="4자리"
                 />
@@ -712,6 +780,9 @@ const ReservationModal = ({
   loading,
   onConfirm,
   onCancel,
+  isAdminMode = false,
+  onAdminCancel,
+  cancellingReservationId,
 }) => {
   if (!context) return null;
   const { type, timeSlot, lab, reservationsForSlot } = context;
@@ -737,6 +808,70 @@ const ReservationModal = ({
       </ul>
     </div>
   );
+
+  // 관리자 모드에서 예약이 있는 경우
+  if (isAdminMode && reservationsForSlot && reservationsForSlot.length > 0) {
+    title = `관리자 모드 - ${lab} - ${timeSlot.split(" ")[0]}`;
+    body = (
+      <div>
+        <p className="text-primary fw-bold mb-3">
+          <span className="badge bg-primary">관리자</span> 예약 관리
+        </p>
+        <div className="alert alert-info">
+          현재 예약 목록입니다. 취소할 예약을 선택하세요.
+        </div>
+        <div className="list-group">
+          {reservationsForSlot.map((r) => (
+            <div
+              key={r.id}
+              className="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
+            >
+              <div>
+                <strong>{r.student_name}</strong>
+                <br />
+                <small className="text-muted">학번: {r.student_id}</small>
+              </div>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => onAdminCancel(r.id)}
+                disabled={cancellingReservationId === r.id}
+              >
+                {cancellingReservationId === r.id ? (
+                  <>
+                    <Spinner
+                      as="span"
+                      animation="border"
+                      size="sm"
+                      className="me-1"
+                    />
+                    취소 중...
+                  </>
+                ) : (
+                  "예약 취소"
+                )}
+              </Button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+    footer = (
+      <Button variant="secondary" onClick={onHide} disabled={loading}>
+        닫기
+      </Button>
+    );
+
+    return (
+      <Modal show={show} onHide={onHide} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>{title}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>{body}</Modal.Body>
+        <Modal.Footer>{footer}</Modal.Footer>
+      </Modal>
+    );
+  }
 
   if (isMyReservation) {
     title = "예약 취소";
