@@ -5,8 +5,18 @@ import { toast } from "react-toastify";
 
 // A simple, self-contained SVG icon component for a user.
 const UserIcon = ({ fill }) => (
-  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '4px' }}>
-    <path d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12ZM12 14C8.68629 14 6 16.6863 6 20H18C18 16.6863 15.3137 14 12 14Z" fill={fill}/>
+  <svg
+    width="32"
+    height="32"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    style={{ marginRight: "4px" }}
+  >
+    <path
+      d="M12 12C14.2091 12 16 10.2091 16 8C16 5.79086 14.2091 4 12 4C9.79086 4 8 5.79086 8 8C8 10.2091 9.79086 12 12 12ZM12 14C8.68629 14 6 16.6863 6 20H18C18 16.6863 15.3137 14 12 14Z"
+      fill={fill}
+    />
   </svg>
 );
 
@@ -47,17 +57,22 @@ const Timetable = ({
 
   const renderStatusIcons = (reservationsForSlot) => {
     const icons = [];
-    const myReservation = reservationsForSlot.find(r => r.student_id === studentId);
+    const myReservation = reservationsForSlot.find(
+      (r) => r.student_id === studentId
+    );
 
     for (let i = 0; i < MAX_RESERVATIONS_PER_SLOT; i++) {
       const reservation = reservationsForSlot[i];
-      let color = '#e5e7eb'; // Default empty color (light grey)
+      let color = "#e5e7eb"; // Default empty color (light grey)
 
       if (reservation) {
-        if (myReservation && reservation.student_id === myReservation.student_id) {
-          color = '#34c759'; // Green for user's own reservation
+        if (
+          myReservation &&
+          reservation.student_id === myReservation.student_id
+        ) {
+          color = "#34c759"; // Green for user's own reservation
         } else {
-          color = '#1F4EF5'; // Blue for other's reservation
+          color = "#1F4EF5"; // Blue for other's reservation
         }
       }
       icons.push(<UserIcon key={i} fill={color} />);
@@ -77,14 +92,14 @@ const Timetable = ({
           return (
             <div key={timeSlot} className="col">
               <div
-                className={`card timetable-card text-center h-100 ${
-                  getCardClass(reservationsForSlot)
-                }`}
+                className={`card timetable-card text-center h-100 ${getCardClass(
+                  reservationsForSlot
+                )}`}
                 onClick={() => handleCardClick(timeSlot)}
                 style={{ cursor: "pointer" }}
               >
                 <div className="card-body p-3 d-flex flex-row justify-content-between align-items-center">
-                  <h5 className="card-title mb-0">{timeSlot.split(' ')[0]}</h5>
+                  <h5 className="card-title mb-0">{timeSlot.split(" ")[0]}</h5>
                   {renderStatusIcons(reservationsForSlot)}
                 </div>
               </div>
