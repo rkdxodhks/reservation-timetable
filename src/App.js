@@ -47,7 +47,7 @@ function App() {
   const checkAdminMode = useCallback(() => {
     const isAdmin = studentId === "admin" && authNumber === "202345603";
     setIsAdminMode(isAdmin);
-    
+
     if (isAdmin) {
       setStudentName("관리자");
       toast.success("관리자 모드가 활성화되었습니다", {
@@ -524,14 +524,13 @@ const InfoModal = (props) => {
                   <OverlayTrigger
                     placement="top"
                     overlay={
-                      <Tooltip>학번을 입력해주세요 (예: 202412345)</Tooltip>
+                      <Tooltip>학번을 입력해주세요 (예: 202412345 또는 admin)</Tooltip>
                     }
                   >
                     <label className="form-label small">학번</label>
                   </OverlayTrigger>
                   <input
                     type="text"
-                    inputMode="numeric"
                     className={`form-control ${
                       validationErrors.studentId ? "is-invalid" : ""
                     }`}
@@ -542,7 +541,7 @@ const InfoModal = (props) => {
                       // 관리자 모드 체크
                       setTimeout(() => checkAdminMode(), 100);
                     }}
-                    placeholder="학번"
+                    placeholder="학번 (admin 입력 가능)"
                   />
                   {validationErrors.studentId && (
                     <div className="invalid-feedback">
