@@ -26,6 +26,7 @@ const Timetable = ({
   reservations,
   currentReservationCount,
   onCardClick, // New prop from App.js
+  isAdminMode = false, // 관리자 모드 prop 추가
 }) => {
   const timeSlots = generateTimeSlots();
 
@@ -98,9 +99,24 @@ const Timetable = ({
                 onClick={() => handleCardClick(timeSlot)}
                 style={{ cursor: "pointer" }}
               >
-                <div className="card-body p-3 d-flex flex-row justify-content-between align-items-center">
-                  <h5 className="card-title mb-0">{timeSlot.split(" ")[0]}</h5>
-                  {renderStatusIcons(reservationsForSlot)}
+                <div className="card-body p-3">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h5 className="card-title mb-0">{timeSlot.split(" ")[0]}</h5>
+                    {renderStatusIcons(reservationsForSlot)}
+                  </div>
+                  {isAdminMode && reservationsForSlot.length > 0 && (
+                    <div className="admin-reservation-info">
+                      <small className="text-muted">예약자 정보:</small>
+                      {reservationsForSlot.map((reservation, index) => (
+                        <div key={index} className="mt-1">
+                          <span className="badge bg-secondary me-1">
+                            {reservation.student_id}
+                          </span>
+                          <span className="small">{reservation.student_name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

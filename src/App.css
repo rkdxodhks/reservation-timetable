@@ -139,6 +139,22 @@ h6 {
   text-decoration: none !important;
 }
 
+/* 관리자 모드 스타일 */
+.admin-reservation-info {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.admin-reservation-info .badge {
+  font-size: 0.65rem;
+}
+
+.admin-reservation-info .small {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
 /* Pill Filter Styles */
 .pill-filter-container {
   display: flex;

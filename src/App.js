@@ -37,6 +37,7 @@ function App() {
   const [currentStep, setCurrentStep] = useState(1); // 1: 정보입력, 2: 확인, 3: 완료
   const [validationErrors, setValidationErrors] = useState({});
   const [dateToggleAnimation, setDateToggleAnimation] = useState(false);
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   const channelRef = useRef(null);
   const todayStr = "2025-11-11";
@@ -203,11 +204,26 @@ function App() {
     setSelectedDate((currentDate) =>
       currentDate === todayStr ? tomorrowStr : todayStr
     );
-
+    
     // 애니메이션 상태 초기화
     setTimeout(() => {
       setDateToggleAnimation(false);
     }, 600);
+  };
+
+  // 관리자 모드 체크 함수
+  const checkAdminMode = () => {
+    const isAdmin = studentId === "admin" && authNumber === "202345603";
+    setIsAdminMode(isAdmin);
+    
+    if (isAdmin) {
+      setStudentName("관리자");
+      toast.success("관리자 모드가 활성화되었습니다", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+      });
+    }
   };
 
   const handleConfirmInfo = () => {
@@ -246,6 +262,9 @@ function App() {
       case "studentId":
         if (!value) {
           errors.studentId = "학번을 입력해주세요";
+        } else if (value === "admin") {
+          // admin은 특별 처리 (관리자 모드)
+          delete errors.studentId;
         } else if (!/^\d{9}$/.test(value)) {
           errors.studentId = "학번은 9자리 숫자여야 합니다";
         } else {
@@ -300,7 +319,7 @@ function App() {
         <div {...swipeHandlers}>
           <Timetable
             key={selectedDate}
-            studentId={studentId}
+            studentId={isAdminMode ? "admin" : studentId}
             selectedLab={selectedLab}
             reservations={
               selectedDate === todayStr
@@ -313,6 +332,7 @@ function App() {
             }
             currentReservationCount={currentReservationCount}
             onCardClick={handleTimeSlotClick}
+            isAdminMode={isAdminMode}
           />
         </div>
 
@@ -516,10 +536,12 @@ const InfoModal = (props) => {
                       validationErrors.studentId ? "is-invalid" : ""
                     }`}
                     value={studentId}
-                    onChange={(e) => {
-                      setStudentId(e.target.value);
-                      validateField("studentId", e.target.value);
-                    }}
+                      onChange={(e) => {
+                        setStudentId(e.target.value);
+                        validateField("studentId", e.target.value);
+                        // 관리자 모드 체크
+                        setTimeout(() => checkAdminMode(), 100);
+                      }}
                     placeholder="학번"
                   />
                   {validationErrors.studentId && (
@@ -571,10 +593,12 @@ const InfoModal = (props) => {
                     validationErrors.authNumber ? "is-invalid" : ""
                   }`}
                   value={authNumber}
-                  onChange={(e) => {
-                    setAuthNumber(e.target.value);
-                    validateField("authNumber", e.target.value);
-                  }}
+                    onChange={(e) => {
+                      setAuthNumber(e.target.value);
+                      validateField("authNumber", e.target.value);
+                      // 관리자 모드 체크
+                      setTimeout(() => checkAdminMode(), 100);
+                    }}
                   placeholder="4자리"
                 />
                 {validationErrors.authNumber && (
