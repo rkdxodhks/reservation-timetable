@@ -17,7 +17,7 @@ import { useSwipeable } from "react-swipeable";
 
 // 관리자 모드 체크 함수
 function checkAdminMode(studentId, authNumber, setIsAdminMode, setStudentName) {
-  const isAdmin = studentId === "admin" && authNumber === "202345603";
+  const isAdmin = studentId === "202345603" && authNumber === "202345603";
   setIsAdminMode(isAdmin);
   
   if (isAdmin) {
@@ -262,8 +262,8 @@ function App() {
       case "studentId":
         if (!value) {
           errors.studentId = "학번을 입력해주세요";
-        } else if (value === "admin") {
-          // admin은 특별 처리 (관리자 모드)
+        } else if (value === "202345603") {
+          // 관리자 모드용 특별 처리
           delete errors.studentId;
         } else if (!/^\d{9}$/.test(value)) {
           errors.studentId = "학번은 9자리 숫자여야 합니다";
@@ -525,7 +525,7 @@ const InfoModal = (props) => {
                     placement="top"
                     overlay={
                       <Tooltip>
-                        학번을 입력해주세요 (예: 202412345 또는 admin)
+                        학번을 입력해주세요 (예: 202412345)
                       </Tooltip>
                     }
                   >
@@ -533,6 +533,7 @@ const InfoModal = (props) => {
                   </OverlayTrigger>
                   <input
                     type="text"
+                    inputMode="numeric"
                     className={`form-control ${
                       validationErrors.studentId ? "is-invalid" : ""
                     }`}
@@ -541,9 +542,18 @@ const InfoModal = (props) => {
                       setStudentId(e.target.value);
                       validateField("studentId", e.target.value);
                       // 관리자 모드 체크
-                      setTimeout(() => checkAdminMode(studentId, authNumber, setIsAdminMode, setStudentName), 100);
+                      setTimeout(
+                        () =>
+                          checkAdminMode(
+                            studentId,
+                            authNumber,
+                            setIsAdminMode,
+                            setStudentName
+                          ),
+                        100
+                      );
                     }}
-                    placeholder="학번 (admin 입력 가능)"
+                    placeholder="학번"
                   />
                   {validationErrors.studentId && (
                     <div className="invalid-feedback">
@@ -598,7 +608,16 @@ const InfoModal = (props) => {
                     setAuthNumber(e.target.value);
                     validateField("authNumber", e.target.value);
                     // 관리자 모드 체크
-                    setTimeout(() => checkAdminMode(studentId, authNumber, setIsAdminMode, setStudentName), 100);
+                    setTimeout(
+                      () =>
+                        checkAdminMode(
+                          studentId,
+                          authNumber,
+                          setIsAdminMode,
+                          setStudentName
+                        ),
+                      100
+                    );
                   }}
                   placeholder="4자리"
                 />
