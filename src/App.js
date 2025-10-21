@@ -43,6 +43,21 @@ function App() {
   const todayStr = "2025-11-11";
   const tomorrowStr = "2025-11-12";
 
+  // 관리자 모드 체크 함수
+  const checkAdminMode = useCallback(() => {
+    const isAdmin = studentId === "admin" && authNumber === "202345603";
+    setIsAdminMode(isAdmin);
+    
+    if (isAdmin) {
+      setStudentName("관리자");
+      toast.success("관리자 모드가 활성화되었습니다", {
+        position: "top-center",
+        autoClose: 2000,
+        hideProgressBar: true,
+      });
+    }
+  }, [studentId, authNumber]);
+
   useEffect(() => {
     setSelectedDate(todayStr);
   }, [todayStr]);
@@ -210,21 +225,6 @@ function App() {
       setDateToggleAnimation(false);
     }, 600);
   };
-
-  // 관리자 모드 체크 함수
-  const checkAdminMode = useCallback(() => {
-    const isAdmin = studentId === "admin" && authNumber === "202345603";
-    setIsAdminMode(isAdmin);
-    
-    if (isAdmin) {
-      setStudentName("관리자");
-      toast.success("관리자 모드가 활성화되었습니다", {
-        position: "top-center",
-        autoClose: 2000,
-        hideProgressBar: true,
-      });
-    }
-  }, [studentId, authNumber]);
 
   const handleConfirmInfo = () => {
     if (!studentId || !authNumber || !studentName) {
