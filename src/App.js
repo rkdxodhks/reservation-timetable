@@ -204,7 +204,7 @@ function App() {
     setSelectedDate((currentDate) =>
       currentDate === todayStr ? tomorrowStr : todayStr
     );
-    
+
     // 애니메이션 상태 초기화
     setTimeout(() => {
       setDateToggleAnimation(false);
@@ -212,7 +212,7 @@ function App() {
   };
 
   // 관리자 모드 체크 함수
-  const checkAdminMode = () => {
+  const checkAdminMode = useCallback(() => {
     const isAdmin = studentId === "admin" && authNumber === "202345603";
     setIsAdminMode(isAdmin);
     
@@ -224,7 +224,7 @@ function App() {
         hideProgressBar: true,
       });
     }
-  };
+  }, [studentId, authNumber]);
 
   const handleConfirmInfo = () => {
     if (!studentId || !authNumber || !studentName) {
@@ -536,12 +536,12 @@ const InfoModal = (props) => {
                       validationErrors.studentId ? "is-invalid" : ""
                     }`}
                     value={studentId}
-                      onChange={(e) => {
-                        setStudentId(e.target.value);
-                        validateField("studentId", e.target.value);
-                        // 관리자 모드 체크
-                        setTimeout(() => checkAdminMode(), 100);
-                      }}
+                    onChange={(e) => {
+                      setStudentId(e.target.value);
+                      validateField("studentId", e.target.value);
+                      // 관리자 모드 체크
+                      setTimeout(() => checkAdminMode(), 100);
+                    }}
                     placeholder="학번"
                   />
                   {validationErrors.studentId && (
@@ -593,12 +593,12 @@ const InfoModal = (props) => {
                     validationErrors.authNumber ? "is-invalid" : ""
                   }`}
                   value={authNumber}
-                    onChange={(e) => {
-                      setAuthNumber(e.target.value);
-                      validateField("authNumber", e.target.value);
-                      // 관리자 모드 체크
-                      setTimeout(() => checkAdminMode(), 100);
-                    }}
+                  onChange={(e) => {
+                    setAuthNumber(e.target.value);
+                    validateField("authNumber", e.target.value);
+                    // 관리자 모드 체크
+                    setTimeout(() => checkAdminMode(), 100);
+                  }}
                   placeholder="4자리"
                 />
                 {validationErrors.authNumber && (
