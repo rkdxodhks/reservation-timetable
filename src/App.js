@@ -264,8 +264,10 @@ function App() {
       case "authNumber":
         if (!value) {
           errors.authNumber = "인증번호를 입력해주세요";
-        } else if (!/^\d{4}$/.test(value)) {
-          errors.authNumber = "인증번호는 4자리 숫자여야 합니다";
+        } else if (!/^\d+$/.test(value)) {
+          errors.authNumber = "인증번호는 숫자만 입력 가능합니다";
+        } else if (value.length < 4) {
+          errors.authNumber = "인증번호는 최소 4자리 이상 입력해주세요";
         } else {
           delete errors.authNumber;
         }
@@ -556,7 +558,7 @@ const InfoModal = (props) => {
                 <OverlayTrigger
                   placement="top"
                   overlay={
-                    <Tooltip>4자리 숫자 인증번호를 입력해주세요</Tooltip>
+                    <Tooltip>인증번호를 입력해주세요 (최소 4자리 이상)</Tooltip>
                   }
                 >
                   <label className="form-label small">인증번호</label>
